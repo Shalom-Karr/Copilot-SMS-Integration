@@ -1,244 +1,211 @@
-/* --- Base and Container --- */
-body {
-    font-family: 'Roboto', sans-serif;
-    line-height: 1.7;
-    margin: 0;
-    padding: 0;
-    background-color: #ffffff;
-    color: #333;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+/* Add these to the <style> tag in gate.html (for instructions) 
+   OR to the style.css file it links to. 
+   These are based on the Cleveland Marketplace styles.
+*/
+
+/* Ensure CSS Variables are defined if not already. 
+   These are from the Cleveland Marketplace style.css. 
+   Adjust if your instructions page has different theme colors.
+*/
+:root {
+    --primary-color: #007bff; /* Blue like the good modal */
+    --primary-hover: #0056b3;
+    --modal-bg: #fefefe;
+    --border-color: #dee2e6;
+    --card-bg: #ffffff; /* Used for .gate-container */
+    --body-bg: #f9f9f9; /* Used for body */
+    --dark-color: #343a40; /* For text */
+    --muted-color: #6c757d; /* For text */
+    --border-radius: .3rem;
+    --box-shadow-lg: 0 1rem 3rem rgba(0,0,0,.175);
 }
 
-.container {
-    max-width: 800px;
-    margin: 30px auto;
-    padding: 20px 30px;
+body { /* Ensure body has a background if not set by main style.css */
+    background-color: var(--body-bg);
+    font-family: 'Roboto', sans-serif; /* Keep your font */
+    /* Other body styles from your gate.html are fine */
 }
 
-header {
-    text-align: left;
-    margin-bottom: 30px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
-}
-
-header h1 {
-    color: #2c3e50;
-    font-weight: 700;
-    font-size: 2.2em;
-    margin-top: 0;
-    margin-bottom: 5px;
-}
-.intro { /* For the subtitle in the header if you keep it */
-    font-size: 1.1em;
-    color: #555;
-    margin-bottom: 0;
-}
-
-
-/* --- Section Titles (H2, H3) --- */
-h2 {
-    color: #1abc9c;
-    font-weight: 500;
-    border-bottom: 2px solid #1abc9c;
-    padding-bottom: 8px;
-    margin-top: 40px;
-    margin-bottom: 20px;
-    font-size: 1.6em;
-}
-
-h3 {
-    color: #2c3e50;
-    font-weight: 700;
-    margin-top: 30px;
-    margin-bottom: 15px;
-    font-size: 1.25em;
-}
-
-/* --- Text Elements --- */
-p, li {
-    color: #444;
-    margin-bottom: 12px; /* Consistent spacing */
-}
-ul, ol { padding-left: 25px; margin-bottom: 15px; }
-ul ul, ol ol { margin-top: 8px; margin-bottom: 8px; }
-ul ul li, ol ol li { font-size: 0.95em; margin-bottom: 6px; }
-strong { font-weight: 700; color: #333; }
-code { background-color: #f0f0f0; padding: 2px 5px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; color: #c0392b; }
-pre { background-color: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word; border: 1px solid #444; }
-pre code { background-color: transparent; color: inherit; padding: 0; font-size: inherit; }
-
-.download-button {
-    display: inline-block;
-    background-color: #1abc9c;
-    color: white;
-    padding: 12px 25px;
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: 500;
-    font-size: 1.05em;
-    transition: background-color 0.3s ease, transform 0.1s ease;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    text-align: center;
-}
-.download-button:hover { background-color: #16a085; transform: translateY(-1px); box-shadow: 0 3px 6px rgba(0,0,0,0.15); }
-.note { font-style: italic; color: #7f8c8d; font-size: 0.9em; margin-top: 5px; display: block; }
-.property-list p { background-color: #f9f9f9; border-left: 3px solid #3498db; padding: 8px 12px; margin-bottom: 10px; border-radius: 0 4px 4px 0; font-size: 0.95em; }
-.property-list p strong { color: #2980b9; }
-.warning-box { background-color: #fef3cd; border: 1px solid #ffeeba; border-left: 5px solid #ffc107; padding: 15px 20px; margin-top: 20px; margin-bottom: 30px; border-radius: 5px; }
-.warning-box h3, .warning-box h4 { color: #856404; margin-top: 0; border-bottom: 1px dashed #856404; padding-bottom: 8px;}
-.warning-box p, .warning-box li { color: #555; font-size: 0.95em; }
-.warning-box ul, .warning-box ol { margin-top: 10px; }
-a { color: #007bff; text-decoration: none; }
-a:hover { text-decoration: underline; }
-
-/* --- Auth Prompt Section (Locked State) --- */
-#auth-prompt-section {
-    padding: 30px 20px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-    text-align: center;
-    max-width: 550px;
-    margin: 40px auto;
-}
-#auth-prompt-section h2 {
-    margin-top: 0;
-    border-bottom: none;
-    color: #2c3e50;
-    font-size: 1.6em;
-}
-#auth-prompt-section p {
-    color: #555;
-    margin-bottom: 25px;
-    font-size: 1.05em;
-}
-.auth-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-.auth-actions button { /* Styles for Signup/Login buttons in the prompt */
-    padding: 10px 25px;
-    font-size: 1em;
-    font-weight: 500;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    border: none;
-}
-.auth-actions .button-primary { background-color: #1abc9c; color: white; }
-.auth-actions .button-primary:hover { background-color: #16a085; transform: translateY(-1px); }
-.auth-actions .button-secondary { background-color: #7f8c8d; color: white; }
-.auth-actions .button-secondary:hover { background-color: #6c757d; transform: translateY(-1px); }
-
-/* --- General Modal Styles --- */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
+.gate-container {
+    background-color: var(--card-bg); /* Use variable */
+    padding: 40px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-lg);
+    max-width: 500px;
     width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+    margin-bottom: 30px; 
 }
-.modal.modal-visible { opacity: 1; }
-.modal-content {
-    background-color: #fff;
-    margin: auto;
-    padding: 25px 30px;
-    border: 1px solid #ddd;
-    width: 90%;
-    max-width: 400px; /* Modals are fairly small for simple signup/login */
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    position: relative;
-    transform: scale(0.95);
-    transition: transform 0.3s ease-in-out;
+.gate-container h1 {
+    color: var(--dark-color);
+    margin-bottom: 15px;
+    font-size: 1.8em;
 }
-.modal.modal-visible .modal-content { transform: scale(1); }
-.modal-content h2 { margin-top: 0; margin-bottom: 20px; color: #333; text-align: center; font-size: 1.5em; border-bottom: none;}
-.close-button { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none;}
-.close-button:hover, .close-button:focus { color: #333; }
-.form-group { margin-bottom: 18px; }
-.form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #444; font-size: 0.95em; }
-.form-group input[type="email"], .form-group input[type="password"] {
-    width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1em;
-}
-.form-group input:focus { border-color: #1abc9c; outline: none; box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.2); }
-.form-message { margin-top: 15px; padding: 8px; border-radius: 4px; font-size: 0.9em; text-align: center; }
-.form-message.error { background-color: #f8d7da; color: #721c24; }
-.form-message.success { background-color: #d4edda; color: #155724; }
-.modal-content .button-primary { /* For modal submit buttons */
-    width: 100%; padding: 10px 15px; background-color: #1abc9c; color: white; border: none; border-radius: 5px;
-    font-size: 1em; font-weight: 500; cursor: pointer; transition: background-color 0.2s ease;
-    display: flex; align-items: center; justify-content: center;
-}
-.modal-content .button-primary:hover { background-color: #16a085; }
-.modal-content .button-primary:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-.button-spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite; margin-left: 8px; }
-.modal-content .button-primary.loading .button-spinner { display: inline-block; }
-.modal-content .button-primary.loading .button-text { opacity: 0; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.modal-switch { text-align: center; margin-top: 18px; font-size: 0.9em; }
-.modal-switch a { color: #1abc9c; text-decoration: none; font-weight: 500; }
-.modal-switch a:hover { text-decoration: underline; }
-
-/* --- Unlocked Content Specific --- */
-.welcome-message {
-    background-color: #e8f8f5; /* Light teal background */
-    color: #0e6252;
-    padding: 12px 18px;
-    border-radius: 5px;
+.gate-container p {
+    color: var(--muted-color);
     margin-bottom: 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid #bdede0;
+    font-size: 1.05em;
+    line-height: 1.6;
 }
-.welcome-message p { margin: 0; font-weight: 500; }
-.button-logout {
-    background-color: #7f8c8d;
-    color: white;
+
+/* --- General Modal Styles (Adapted from Cleveland Marketplace) --- */
+.modal { 
+    display: none; 
+    position: fixed; 
+    z-index: 1001; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%; 
+    overflow-y: auto; 
+    background-color: rgba(0,0,0,0.65); /* Darker overlay */
+    align-items: center; 
+    justify-content: center; 
+    opacity: 0; 
+    visibility: hidden; 
+    transition: opacity 0.3s ease-in-out, visibility 0s linear 0.3s; 
+    padding: 20px 0; 
+}
+.modal.modal-visible { 
+    opacity: 1; 
+    visibility: visible; 
+    transition: opacity 0.3s ease-in-out, visibility 0s linear 0s; 
+}
+.modal-content { 
+    background-color: var(--modal-bg); 
+    padding: 30px 35px; 
+    border: 1px solid var(--border-color); 
+    width: 90%; 
+    max-width: 500px; 
+    border-radius: var(--border-radius); 
+    box-shadow: var(--box-shadow-lg); 
+    position: relative; 
+    opacity: 0; 
+    transform: translateY(-20px) scale(0.98); 
+    transition: opacity 0.25s ease-out 0.1s, transform 0.25s ease-out 0.1s; 
+    margin: auto; 
+}
+.modal.modal-visible .modal-content { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+}
+.modal-content h2 { 
+    margin-top: 0; 
+    margin-bottom: 25px; 
+    color: var(--dark-color); 
+    text-align: center; 
+    font-size: 1.75em; 
+    font-weight: 600;
+}
+.close-button { 
+    color: #aaa; 
+    position: absolute; 
+    top: 12px; 
+    right: 18px; 
+    font-size: 32px; 
+    font-weight: bold; 
+    line-height: 1; 
+    cursor: pointer; 
+    background: none; 
+    border: none; 
+    padding: 5px; 
+    z-index: 10; 
+}
+.close-button:hover, .close-button:focus { 
+    color: var(--dark-color); 
+    text-decoration: none; 
+}
+
+/* Form styling within the modal */
+.modal-content form div.form-group, /* If using .form-group like in instructions app.js */
+.modal-content form div { /* General div if not using .form-group */
+    margin-bottom: 20px; 
+}
+.modal-content form label { 
+    display: block; 
+    margin-bottom: 8px; 
+    font-weight: 500; 
+    color: #495057; 
+    font-size: 1em; 
+    text-align: left; /* Align labels left */
+}
+.modal-content form input[type="text"] { 
+    width: 100%; 
+    padding: 12px 14px; 
+    border: 1px solid var(--border-color); 
+    border-radius: var(--border-radius); 
+    box-sizing: border-box; 
+    font-size: 1em; 
+    transition: border-color 0.2s ease, box-shadow 0.2s ease; 
+}
+.modal-content form input[type="text"]:focus {
+    outline: none; 
+    border-color: var(--primary-color); 
+    box-shadow: 0 0 0 3px rgba(0,123,255,.25); /* Blue focus like good modal */
+}
+
+/* Button styling within the modal */
+.modal-content button.button-primary, /* General primary button in modal */
+#siteGateTwoFactorAuthForm button[type="submit"] /* Specific button */
+{
+    background-color: var(--primary-color); /* Blue */
+    color: white; 
+    padding: 12px 20px; 
     border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+    border-radius: var(--border-radius); 
+    cursor: pointer; 
+    font-size: 1.05em; 
+    font-weight: 500; /* Match good modal button */
+    text-transform: uppercase; /* Match good modal button */
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); /* var(--box-shadow) */
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.1s ease;
+    text-align: center;
+    width: 100%;
+    margin-top: 10px; /* Adjust as needed */
 }
-.button-logout:hover { background-color: #6c757d; }
 
-.hidden { display: none !important; }
-
-footer { text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.9em; color: #7f8c8d; }
-footer a { color: #16a085; font-weight: 500; }
-
-/* Responsive */
-@media (max-width: 768px) {
-    .container { margin: 20px; padding: 15px 20px; }
-    header h1 { font-size: 1.9em; }
-    h2 { font-size: 1.4em; }
-    h3 { font-size: 1.15em; }
-    #auth-prompt-section { margin: 30px auto; padding: 25px 15px; }
-    .auth-actions { flex-direction: column; }
-    .auth-actions button { width: 100%; max-width: 280px; }
+.modal-content button.button-primary:hover:not(:disabled) { 
+    background-color: var(--primary-hover); 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+    transform: translateY(-1px); 
 }
-@media (max-width: 480px) {
-    header h1 { font-size: 1.7em; }
-    .modal-content { max-width: calc(100% - 30px); padding: 20px; }
-    .modal-content h2 { font-size: 1.3em; }
+.modal-content button.button-primary:focus-visible {
+    outline: 2px solid var(--primary-color); 
+    outline-offset: 2px; 
+    box-shadow: 0 0 0 4px rgba(0,123,255,.25);
+}
+.modal-content button.button-primary:disabled {
+    background-color: #aecbed; /* Lighter blue when disabled */
+    color: #777; 
+    cursor: not-allowed; 
+    box-shadow: none; 
+}
+
+/* Form message styling */
+.form-message { 
+    margin-top: 18px; 
+    font-size: 0.95em; 
+    min-height: 1.2em; 
+    text-align: center; 
+    padding: 12px; 
+    border-radius: var(--border-radius); 
+}
+.form-message.success { 
+    color: #0f5132; 
+    background-color: #d1e7dd; 
+    border: 1px solid #badbcc;
+}
+.form-message.error { 
+    color: #842029; 
+    background-color: #f8d7da; 
+    border: 1px solid #f5c2c7;
+}
+
+/* Ensure the initial gate content button also uses primary color */
+#proceedToVerificationBtn {
+    background-color: var(--primary-color); /* Blue */
+    color: white;
+    /* other styles for this button are fine from your gate.html */
+}
+#proceedToVerificationBtn:hover {
+    background-color: var(--primary-hover);
 }
