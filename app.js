@@ -1,12 +1,16 @@
-// app.js - For GroupMe Bot Instructions Page (Email/Password Auth)
+// app.js - For GroupMe Bot Instructions Page (Email/Password Auth) - WITH SITE GATE
 
 // --- Supabase Configuration ---
-const SUPABASE_URL = 'https://zazjozinljwdgbyppffy.supabase.co'; // YOUR INSTRUCTION PAGE SUPABASE URL
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphempvemlubGp3ZGdieXBwZmZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1Nzg5MTQsImV4cCI6MjA2MjE1NDkxNH0.PNGhZLxt6D8Lk76CUU0Bviul-T3nV0xHvQaJobX8f-k'; // YOUR INSTRUCTION PAGE SUPABASE ANON KEY
+const SUPABASE_URL = 'https://zazjozinljwdgbyppffy.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphempvemlubGp3ZGdieXBwZmZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1Nzg5MTQsImV4cCI6MjA2MjE1NDkxNH0.PNGhZLxt6D8Lk76CUU0Bviul-T3nV0xHvQaJobX8f-k';
 
 if (!SUPABASE_URL || SUPABASE_URL.includes('YOUR_SUPABASE_URL') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')) {
     console.error("CRITICAL ERROR: Supabase URL or Anon Key is not configured or uses placeholders. Please update app.js.");
     alert("Application Error: Backend services are not configured.");
+    document.addEventListener('DOMContentLoaded', () => {
+        const bodyContent = document.querySelector('.container');
+        if (bodyContent) bodyContent.innerHTML = '<p style="color:red; text-align:center; padding:20px;">Application configuration error.</p>';
+    });
 }
 
 const { createClient } = supabase;
@@ -20,27 +24,29 @@ try {
 }
 
 // --- DOM Elements ---
-const authPromptSection = document.getElementById('auth-prompt-section');
-const unlockedContent = document.getElementById('unlocked-content');
+let authPromptSection, unlockedContent, showSignupModalBtn, showLoginModalBtn,
+    signupModal, loginModal, signupForm, loginForm, signupMessage, loginMessage,
+    switchToLoginLinkFromSignup, switchToSignupLinkFromLogin, forgotPasswordLink,
+    logoutButton, welcomeMessageDiv;
 
-const showSignupModalBtn = document.getElementById('showSignupModalBtn');
-const showLoginModalBtn = document.getElementById('showLoginModalBtn');
+function assignInstructionPageDOMElements() {
+    authPromptSection = document.getElementById('auth-prompt-section');
+    unlockedContent = document.getElementById('unlocked-content');
+    showSignupModalBtn = document.getElementById('showSignupModalBtn');
+    showLoginModalBtn = document.getElementById('showLoginModalBtn');
+    signupModal = document.getElementById('signupModal');
+    loginModal = document.getElementById('loginModal');
+    signupForm = document.getElementById('signupForm');
+    loginForm = document.getElementById('loginForm');
+    signupMessage = document.getElementById('signupMessage');
+    loginMessage = document.getElementById('loginMessage');
+    switchToLoginLinkFromSignup = document.getElementById('switchToLoginLinkFromSignup');
+    switchToSignupLinkFromLogin = document.getElementById('switchToSignupLinkFromLogin');
+    forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    logoutButton = document.getElementById('logoutButton');
+    welcomeMessageDiv = document.querySelector('.welcome-message');
+}
 
-const signupModal = document.getElementById('signupModal');
-const loginModal = document.getElementById('loginModal');
-
-const signupForm = document.getElementById('signupForm');
-const loginForm = document.getElementById('loginForm');
-
-const signupMessage = document.getElementById('signupMessage');
-const loginMessage = document.getElementById('loginMessage');
-
-const switchToLoginLinkFromSignup = document.getElementById('switchToLoginLinkFromSignup');
-const switchToSignupLinkFromLogin = document.getElementById('switchToSignupLinkFromLogin');
-const forgotPasswordLink = document.getElementById('forgotPasswordLink');
-
-const logoutButton = document.getElementById('logoutButton');
-const welcomeMessageDiv = document.querySelector('.welcome-message'); // To show email
 
 // --- Utility Functions ---
 function showModal(modalElement) {
@@ -81,7 +87,12 @@ function showUnlockedContentUI(user) {
     if (unlockedContent) unlockedContent.classList.remove('hidden');
     if (welcomeMessageDiv && user) {
         const p = welcomeMessageDiv.querySelector('p');
-        if (p) p.childNodes[0].nodeValue = `Welcome, ${user.email}! You can now access the setup guide. `; // Update text node
+        if (p && p.childNodes.length > 0 && p.childNodes[0].nodeType === Node.TEXT_NODE) {
+             p.childNodes[0].nodeValue = `Welcome, ${user.email}! You can now access the setup guide. `;
+        } else if (p) { 
+            p.textContent = `Welcome, ${user.email}! You can now access the setup guide. `;
+            if(logoutButton) p.appendChild(logoutButton); 
+        }
     }
 }
 function showLockedContentUI() {
@@ -96,14 +107,13 @@ async function createUserProfile(user) {
     if (!user || !supabaseClient) return;
     try {
         const { error } = await supabaseClient
-            .from('profiles')
+            .from('profiles') 
             .insert({
                 id: user.id,
                 email: user.email
             });
         if (error) {
-            // It's possible the profile already exists if there was a partial signup or manual entry
-            if (error.code === '23505') { // Unique violation (profile already exists)
+            if (error.code === '23505') { 
                  console.warn('Profile already exists for user:', user.id);
             } else {
                 throw error;
@@ -113,8 +123,7 @@ async function createUserProfile(user) {
         }
     } catch (error) {
         console.error('Error creating profile:', error.message);
-        // This is not critical for viewing instructions, so don't block UI
-        if (loginMessage) { // Or a general message area
+        if (loginMessage) { 
             loginMessage.textContent = `Profile setup issue: ${error.message}. You can still view instructions.`;
             loginMessage.className = 'form-message error';
         }
@@ -140,20 +149,11 @@ async function handleSignup(event) {
         signupMessage.textContent = "Signup failed: " + error.message;
         signupMessage.classList.add('error');
     } else if (data.user) {
-        await createUserProfile(data.user); // Create profile after successful signup
+        await createUserProfile(data.user); 
         signupMessage.textContent = "Signup successful! If email confirmation is enabled, please check your email. Otherwise, you might be logged in.";
         signupMessage.classList.add('success');
-        // Supabase onAuthStateChange will handle UI update if user session starts
-        // or if email confirmation is required, user needs to confirm.
-        // We can hide modal after a delay for message visibility.
         setTimeout(() => {
             hideModal(signupModal);
-            if (data.session) { // If session is immediately available (e.g., email confirm OFF)
-                showUnlockedContentUI(data.user);
-            } else {
-                // User needs to confirm email, show prompt section again or a specific message.
-                // For now, just hide modal; onAuthStateChange will keep locked UI.
-            }
         }, 2500);
     } else {
         signupMessage.textContent = "Signup seems to have completed, but no user data was returned. Please try logging in or check your email.";
@@ -179,9 +179,6 @@ async function handleLogin(event) {
         loginMessage.textContent = "Login failed: " + error.message;
         loginMessage.classList.add('error');
     } else if (data.user) {
-        // loginMessage.textContent = "Login successful!"; // Not needed, onAuthStateChange handles UI
-        // loginMessage.classList.add('success');
-        // Supabase onAuthStateChange will handle UI update
         hideModal(loginModal);
     }
     showButtonLoadingState(submitButton, false, "Log In");
@@ -191,14 +188,13 @@ async function handleLogout() {
     if (!supabaseClient) return;
     const { error } = await supabaseClient.auth.signOut();
     if (error) {
-        alert('Logout failed: ' + error.message); // Simple alert for logout error
+        alert('Logout failed: ' + error.message);
     }
-    // onAuthStateChange will handle UI update
 }
 
 async function handleForgotPassword(event) {
     event.preventDefault();
-    if (!loginForm || !loginMessage || !supabaseClient) return; // Assume email from login form or prompt
+    if (!loginForm || !loginMessage || !supabaseClient) return; 
     const email = loginForm.loginEmail.value || prompt("Please enter your email address to reset password:");
 
     if (!email) {
@@ -210,7 +206,7 @@ async function handleForgotPassword(event) {
     loginMessage.className = 'form-message info';
 
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin, // Or a specific password reset page
+        redirectTo: window.location.origin + window.location.pathname, 
     });
 
     if (error) {
@@ -225,16 +221,37 @@ async function handleForgotPassword(event) {
 
 // --- Event Listeners and Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
+    assignInstructionPageDOMElements(); 
+
     if (!supabaseClient) {
-        showLockedContentUI();
-        const container = document.querySelector('.container');
-        if (container && authPromptSection) {
-            authPromptSection.innerHTML = `<div style="color: red; font-weight: bold; text-align: center; padding: 20px;">Error: Application cannot connect to backend services. Please try again later.</div>`;
+        showLockedContentUI(); 
+        if (authPromptSection) {
+             authPromptSection.innerHTML = `<div style="color: red; font-weight: bold; text-align: center; padding: 20px;">Error: Application cannot connect to backend services. Please try again later.</div>`;
         }
+        if (unlockedContent) unlockedContent.classList.add('hidden');
         return;
     }
 
-    // Modal Triggers
+    // --- Site Access Gate Check ---
+    if (sessionStorage.getItem('instructionsAccessGranted') === 'true') {
+        initializeInstructionsApp();
+    } else {
+        if (!window.location.pathname.endsWith('gate.html')) { // Check against generic gate.html
+            window.location.href = 'gate.html'; // Redirect to generic gate.html
+            return; 
+        }
+        // If on gate.html, its own script handles it. Hide content on index.html.
+        if (authPromptSection) authPromptSection.classList.add('hidden');
+        if (unlockedContent) unlockedContent.classList.add('hidden');
+    }
+});
+
+function initializeInstructionsApp() {
+    console.log("Instructions app initializing after gate pass...");
+
+    if (authPromptSection) authPromptSection.classList.remove('hidden'); 
+    // unlockedContent starts hidden, showUnlockedContentUI will manage it based on login
+
     if (showSignupModalBtn) showSignupModalBtn.addEventListener('click', () => {
         hideModal(loginModal); showModal(signupModal);
         if(signupMessage) signupMessage.textContent = '';
@@ -246,13 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if(loginForm) loginForm.reset();
     });
 
-    // Modal Close Buttons
     document.querySelectorAll('.modal .close-button').forEach(button => {
         button.addEventListener('click', () => {
             hideModal(button.closest('.modal'));
         });
     });
-    // Close modal on background click
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (event) => {
             if (event.target === modal) {
@@ -261,15 +276,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
-    // Form Submissions
     if (signupForm) signupForm.addEventListener('submit', handleSignup);
     if (loginForm) loginForm.addEventListener('submit', handleLogin);
     if (logoutButton) logoutButton.addEventListener('click', handleLogout);
     if (forgotPasswordLink) forgotPasswordLink.addEventListener('click', handleForgotPassword);
 
-
-    // Switch links between modals
     if (switchToLoginLinkFromSignup) {
         switchToLoginLinkFromSignup.addEventListener('click', (e) => {
             e.preventDefault(); hideModal(signupModal); showModal(loginModal);
@@ -283,20 +294,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
-    // Auth State Change Listener
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
         console.log('Auth state changed (Instructions Page - Email/Pass):', _event, session);
         if (session && session.user) {
             showUnlockedContentUI(session.user);
-            // Ensure profile exists (could be called here too, or just after signup)
-            // await ensureUserProfileExists(session.user); // This is already called in handleSignup
         } else {
             showLockedContentUI();
         }
     });
 
-    // Initial check for session
     async function initialSessionCheck() {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && session.user) {
@@ -308,4 +314,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     initialSessionCheck();
-});
+}
