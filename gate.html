@@ -4,59 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setup Guide - Verification</title>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        /* Styles specific to gate.html, can be moved to style.css if preferred */
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            text-align: center;
-            background-color: #ffffff; 
-            padding: 20px;
-            box-sizing: border-box;
-            font-family: 'Roboto', sans-serif;
-        }
-        .gate-container { 
-            background-color: #f9f9f9; 
-            padding: 30px 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-            margin-bottom: 30px;
-        }
-        .gate-container h1 {
-            color: #2c3e50; 
-            margin-bottom: 15px;
-            font-size: 1.8em;
-            font-weight: 700;
-        }
-        .gate-container p {
-            color: #555; 
-            margin-bottom: 30px;
-            font-size: 1.05em;
-            line-height: 1.6;
-        }
-        #proceedToVerificationBtn { 
-            padding: 10px 25px;
-            font-size: 1em;
-            font-weight: 500;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            border: none;
-            background-color: #1abc9c; 
-            color: white;
-        }
-        #proceedToVerificationBtn:hover { background-color: #16a085; transform: translateY(-1px); }
-
-        /* Modal styles from your existing style.css should apply if linked correctly */
-        /* If not, you might need to copy relevant .modal, .modal-content etc. styles here or ensure style.css is comprehensive */
-    </style>
 </head>
 <body>
     <div class="gate-container" id="initialGateContent">
@@ -65,7 +14,6 @@
         <button id="proceedToVerificationBtn" class="button-primary">Proceed to Verification</button>
     </div>
 
-    <!-- 2FA Code Input Modal for Site Gate -->
     <div id="siteGateTwoFactorAuthModal" class="modal"> 
         <div class="modal-content">
             <span class="close-button" id="closeSiteGateTwoFactorAuthModalBtn">×</span>
@@ -76,7 +24,7 @@
                     <label for="siteGateTwoFactorAuthCode">Verification Code:</label>
                     <input type="text" id="siteGateTwoFactorAuthCode" name="siteGateTwoFactorAuthCode" required maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="one-time-code">
                 </div>
-                <button type="submit" class="button-primary" style="margin-top: 15px;">
+                <button type="submit" class="button-primary">
                     Verify & View Instructions
                 </button>
                 <p id="siteGateTwoFactorAuthMessage" class="form-message"></p>
@@ -85,7 +33,6 @@
     </div>
 
     <script>
-        // This script is self-contained for gate.html
         let siteGateGeneratedCode = '';
 
         function showSiteGateModal() {
@@ -145,7 +92,7 @@
                         siteGateMessage.className = 'form-message success';
                         sessionStorage.setItem('instructionsAccessGranted', 'true'); 
                         setTimeout(() => {
-                            window.location.href = 'index.html'; // Redirect to your main instructions page
+                            window.location.href = 'index.html'; 
                         }, 1000);
                     } else {
                         siteGateMessage.textContent = "Invalid verification code. Please try again.";
