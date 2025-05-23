@@ -83,23 +83,57 @@ function showButtonLoadingState(button, isLoading, defaultText = "Submit", loadi
 
 // --- UI State Management ---
 function showUnlockedContentUI(user) {
-    if (authPromptSection) authPromptSection.classList.add('hidden');
-    if (unlockedContent) unlockedContent.classList.remove('hidden');
+    if (!authPromptSection) authPromptSection = document.getElementById('auth-prompt-section');
+    if (!unlockedContent) unlockedContent = document.getElementById('unlocked-content');
+    if (!welcomeMessageDiv && unlockedContent) welcomeMessageDiv = unlockedContent.querySelector('.welcome-message');
+    if (!logoutButton && welcomeMessageDiv) logoutButton = welcomeMessageDiv.querySelector('#logoutButton');
+
+    if (authPromptSection) {
+        authPromptSection.classList.add('hidden');
+        authPromptSection.style.display = 'none'; 
+    }
+    if (unlockedContent) {
+        unlockedContent.classList.remove('hidden');
+        unlockedContent.style.display = 'block'; 
+    }
     if (welcomeMessageDiv && user) {
         const p = welcomeMessageDiv.querySelector('p');
-        if (p && p.childNodes.length > 0 && p.childNodes[0].nodeType === Node.TEXT_NODE) {
-             p.childNodes[0].nodeValue = `Welcome, ${user.email}! You can now access the setup guide. `;
-        } else if (p) { 
-            p.textContent = `Welcome, ${user.email}! You can now access the setup guide. `;
-            if(logoutButton) p.appendChild(logoutButton); 
+        if (p) {
+            let textNodeFound = false;
+            if (p.childNodes.length > 0) {
+                for (let i = 0; i < p.childNodes.length; i++) {
+                    if (p.childNodes[i].nodeType === Node.TEXT_NODE) {
+                        p.childNodes[i].nodeValue = `Welcome, ${user.email}! You can now access the setup guide. `;
+                        textNodeFound = true;
+                        break;
+                    }
+                }
+            }
+            if (!textNodeFound) { 
+                p.innerHTML = `Welcome, ${user.email}! You can now access the setup guide. `; 
+                if (logoutButton) { 
+                    p.appendChild(logoutButton);
+                }
+            } else if (logoutButton && !p.contains(logoutButton)) { // Ensure button is there if text node was updated
+                 p.appendChild(logoutButton);
+            }
         }
     }
 }
 function showLockedContentUI() {
-    if (authPromptSection) authPromptSection.classList.remove('hidden');
-    if (unlockedContent) unlockedContent.classList.add('hidden');
-    hideModal(signupModal);
-    hideModal(loginModal);
+    if (!authPromptSection) authPromptSection = document.getElementById('auth-prompt-section');
+    if (!unlockedContent) unlockedContent = document.getElementById('unlocked-content');
+
+    if (authPromptSection) {
+        authPromptSection.classList.remove('hidden');
+        authPromptSection.style.display = 'block'; 
+    }
+    if (unlockedContent) {
+        unlockedContent.classList.add('hidden');
+        unlockedContent.style.display = 'none'; 
+    }
+    if (signupModal) hideModal(signupModal); 
+    if (loginModal) hideModal(loginModal);
 }
 
 // --- Profile Creation (called after successful signup) ---
@@ -236,11 +270,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionStorage.getItem('instructionsAccessGranted') === 'true') {
         initializeInstructionsApp();
     } else {
-        if (!window.location.pathname.endsWith('gate.html')) { // Check against generic gate.html
-            window.location.href = 'gate.html'; // Redirect to generic gate.html
+        // Updated to check against the current path to avoid loop if gate.html is somehow index.html
+        const currentPath = window.location.pathname.substring(window.location.pathname.lastIndexOf("/") + 1);
+        if (currentPath !== 'gate.html') {
+            window.location.href = 'gate.html'; 
             return; 
         }
-        // If on gate.html, its own script handles it. Hide content on index.html.
+        // If on gate.html, its own script handles it. Hide content on index.html if it were to load without grant.
         if (authPromptSection) authPromptSection.classList.add('hidden');
         if (unlockedContent) unlockedContent.classList.add('hidden');
     }
@@ -250,7 +286,7 @@ function initializeInstructionsApp() {
     console.log("Instructions app initializing after gate pass...");
 
     if (authPromptSection) authPromptSection.classList.remove('hidden'); 
-    // unlockedContent starts hidden, showUnlockedContentUI will manage it based on login
+    if (unlockedContent) unlockedContent.classList.add('hidden'); // Start with unlocked content hidden until auth state confirms
 
     if (showSignupModalBtn) showSignupModalBtn.addEventListener('click', () => {
         hideModal(loginModal); showModal(signupModal);

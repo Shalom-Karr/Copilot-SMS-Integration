@@ -17,8 +17,8 @@
             <h1>Setup: GroupMe Copilot Image Bot</h1>
         </header>
 
-        <!-- Locked Content: Signup/Login Prompt -->
-        <section id="auth-prompt-section">
+        <!-- Locked Content: Signup/Login Prompt (Initially hidden by app.js if gate not passed) -->
+        <section id="auth-prompt-section" class="hidden"> <!-- Start hidden -->
             <h2>Access Instructions</h2>
             <p>Please sign up or log in to view the setup guide and download the script.</p>
             <div class="auth-actions">
@@ -41,7 +41,7 @@
                         <label for="signupPassword">Password</label>
                         <input type="password" id="signupPassword" name="signupPassword" placeholder="Choose a password" required>
                     </div>
-                    <!-- Cloudflare Turnstile Widget -->
+                    <!-- Cloudflare Turnstile Widget - REPLACE SITE KEY -->
                     <div class="cf-turnstile" id="signup-turnstile-widget" data-sitekey="0x4AAAAAABeUvDgLI36t5lu-"></div>
                     <p id="signupMessage" class="form-message"></p>
                     <button type="submit" class="button-primary">
@@ -67,7 +67,7 @@
                         <label for="loginPassword">Password</label>
                         <input type="password" id="loginPassword" name="loginPassword" placeholder="Your password" required>
                     </div>
-                    <!-- Cloudflare Turnstile Widget -->
+                    <!-- Cloudflare Turnstile Widget - REPLACE SITE KEY -->
                     <div class="cf-turnstile" id="login-turnstile-widget" data-sitekey="0x4AAAAAABeUvDgLI36t5lu-"></div>
                     <p id="loginMessage" class="form-message"></p>
                     <button type="submit" class="button-primary">
@@ -93,7 +93,8 @@
             <section id="download-script-section">
                 <h2>1. Get The Script File</h2>
                 <p>You'll need the <code>Code.gs</code> script file to proceed. Download it here as <code>Code-GS.txt</code>:</p>
-                <a href="Code.gs" download="Code-GS.txt" class="download-button">
+                <!-- Make sure Code.gs or code.gs exists in the same folder -->
+                <a href="code.gs" download="Code-GS.txt" class="download-button"> 
                     Download Script (Code-GS.txt)
                 </a>
                 <p class="note">Make sure you save this file. You can rename it back to <code>Code.gs</code> after downloading, or simply copy its content.</p>
@@ -252,7 +253,6 @@
 
             <footer>
                 <p>Good luck with your setup! If you found this useful, consider sending me an <a href="mailto:copilotimagesforgroupme@gmail.com"> Email to copilotimagesforgroupme@gmail.com </a>thanking me!</p>
-                 <!-- Logout button moved to welcome message area -->
             </footer>
         </div> <!-- End of unlocked-content -->
     </div> <!-- End of container -->
