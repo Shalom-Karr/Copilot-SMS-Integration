@@ -1,4 +1,4 @@
-// app.js - For GroupMe Bot Instructions Page (Email/Password Auth) - WITH SITE GATE
+// app.js - For GroupMe Bot Instructions Page (Email/Password Auth) - WITH SITE GATE, AMPLITUDE & REQUIRED NAME/PHONE
 
 // --- Supabase Configuration ---
 const SUPABASE_URL = 'https://zazjozinljwdgbyppffy.supabase.co';
@@ -90,11 +90,11 @@ function showUnlockedContentUI(user) {
 
     if (authPromptSection) {
         authPromptSection.classList.add('hidden');
-        authPromptSection.style.display = 'none'; 
+        authPromptSection.style.display = 'none';
     }
     if (unlockedContent) {
         unlockedContent.classList.remove('hidden');
-        unlockedContent.style.display = 'block'; 
+        unlockedContent.style.display = 'block';
     }
     if (welcomeMessageDiv && user) {
         const p = welcomeMessageDiv.querySelector('p');
@@ -109,15 +109,18 @@ function showUnlockedContentUI(user) {
                     }
                 }
             }
-            if (!textNodeFound) { 
-                p.innerHTML = `Welcome, ${user.email}! You can now access the setup guide. `; 
-                if (logoutButton) { 
+            if (!textNodeFound) {
+                p.innerHTML = `Welcome, ${user.email}! You can now access the setup guide. `;
+                if (logoutButton) {
                     p.appendChild(logoutButton);
                 }
-            } else if (logoutButton && !p.contains(logoutButton)) { // Ensure button is there if text node was updated
+            } else if (logoutButton && !p.contains(logoutButton)) {
                  p.appendChild(logoutButton);
             }
         }
+    }
+    if (window.amplitude && user) {
+        window.amplitude.logEvent('Instructions Viewed', { user_id: user.id });
     }
 }
 function showLockedContentUI() {
@@ -126,38 +129,43 @@ function showLockedContentUI() {
 
     if (authPromptSection) {
         authPromptSection.classList.remove('hidden');
-        authPromptSection.style.display = 'block'; 
+        authPromptSection.style.display = 'block';
     }
     if (unlockedContent) {
         unlockedContent.classList.add('hidden');
-        unlockedContent.style.display = 'none'; 
+        unlockedContent.style.display = 'none';
     }
-    if (signupModal) hideModal(signupModal); 
+    if (signupModal) hideModal(signupModal);
     if (loginModal) hideModal(loginModal);
 }
 
 // --- Profile Creation (called after successful signup) ---
-async function createUserProfile(user) {
+async function createUserProfile(user, name, phone_number) {
     if (!user || !supabaseClient) return;
     try {
+        const profileData = {
+            id: user.id,
+            email: user.email,
+            name: name.trim(), // Name is now required by the form
+            phone_number: phone_number.trim() // Phone is now required by the form
+        };
+
         const { error } = await supabaseClient
-            .from('profiles') 
-            .insert({
-                id: user.id,
-                email: user.email
-            });
+            .from('profiles')
+            .insert(profileData);
+
         if (error) {
-            if (error.code === '23505') { 
+            if (error.code === '23505') {
                  console.warn('Profile already exists for user:', user.id);
             } else {
                 throw error;
             }
         } else {
-            console.log('Profile created for user:', user.id);
+            console.log('Profile created for user:', user.id, 'with data:', profileData);
         }
     } catch (error) {
         console.error('Error creating profile:', error.message);
-        if (loginMessage) { 
+        if (loginMessage) {
             loginMessage.textContent = `Profile setup issue: ${error.message}. You can still view instructions.`;
             loginMessage.className = 'form-message error';
         }
@@ -171,27 +179,58 @@ async function handleSignup(event) {
     if (!signupForm || !signupMessage || !supabaseClient) return;
     const email = signupForm.signupEmail.value;
     const password = signupForm.signupPassword.value;
+    const name = signupForm.signupName.value;
+    const phone_number = signupForm.signupPhone.value;
+
     const submitButton = signupForm.querySelector('button[type="submit"]');
 
     showButtonLoadingState(submitButton, true, "Sign Up", "Signing Up...");
     signupMessage.textContent = '';
     signupMessage.className = 'form-message';
 
-    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    // Data to be stored in auth.users.raw_user_meta_data
+    const userMetaData = {
+        name: name.trim(), // Name is required
+        phone_number: phone_number.trim() // Phone is required
+    };
+
+    const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+            data: userMetaData
+        }
+    });
 
     if (error) {
         signupMessage.textContent = "Signup failed: " + error.message;
         signupMessage.classList.add('error');
+        if (window.amplitude) {
+            window.amplitude.logEvent('Signup Failed', { error_message: error.message, email: email });
+        }
     } else if (data.user) {
-        await createUserProfile(data.user); 
+        await createUserProfile(data.user, name, phone_number);
+
         signupMessage.textContent = "Signup successful! If email confirmation is enabled, please check your email. Otherwise, you might be logged in.";
         signupMessage.classList.add('success');
+        if (window.amplitude) {
+            window.amplitude.logEvent('Signup Succeeded', { user_id: data.user.id, email: data.user.email });
+            window.amplitude.setUserId(data.user.id);
+            const identifyObj = new amplitude.Identify()
+                .set('email', data.user.email)
+                .set('name', name.trim())
+                .set('phone_number_provided', true); // Since it's required
+            window.amplitude.identify(identifyObj);
+        }
         setTimeout(() => {
             hideModal(signupModal);
         }, 2500);
     } else {
         signupMessage.textContent = "Signup seems to have completed, but no user data was returned. Please try logging in or check your email.";
         signupMessage.classList.add('info');
+         if (window.amplitude) {
+            window.amplitude.logEvent('Signup Anomaly', { email: email });
+        }
     }
     showButtonLoadingState(submitButton, false, "Sign Up");
 }
@@ -212,23 +251,66 @@ async function handleLogin(event) {
     if (error) {
         loginMessage.textContent = "Login failed: " + error.message;
         loginMessage.classList.add('error');
+        if (window.amplitude) {
+            window.amplitude.logEvent('Login Failed', { email: email, error_message: error.message });
+        }
     } else if (data.user) {
         hideModal(loginModal);
+        if (window.amplitude) {
+            window.amplitude.logEvent('Login Succeeded', { user_id: data.user.id, email: data.user.email });
+            window.amplitude.setUserId(data.user.id);
+
+            // Attempt to fetch name from profiles to enrich Amplitude identity
+            // This is an optimistic enrichment.
+            try {
+                const { data: profileData, error: profileError } = await supabaseClient
+                    .from('profiles')
+                    .select('name')
+                    .eq('id', data.user.id)
+                    .single();
+
+                const identifyObj = new amplitude.Identify().set('email', data.user.email);
+                if (!profileError && profileData && profileData.name) {
+                    identifyObj.set('name', profileData.name);
+                }
+                window.amplitude.identify(identifyObj);
+
+            } catch (e) {
+                console.warn("Could not fetch profile name for Amplitude on login:", e);
+                // Fallback to just email if profile fetch fails
+                window.amplitude.identify(new amplitude.Identify().set('email', data.user.email));
+            }
+        }
     }
     showButtonLoadingState(submitButton, false, "Log In");
 }
 
 async function handleLogout() {
     if (!supabaseClient) return;
+    let userIdForEvent = null;
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) userIdForEvent = user.id;
+    } catch(e) { /* ignore */ }
+
+    if (window.amplitude && userIdForEvent) {
+        window.amplitude.logEvent('Logout', { user_id: userIdForEvent });
+    }
+
     const { error } = await supabaseClient.auth.signOut();
     if (error) {
         alert('Logout failed: ' + error.message);
+    }
+
+    if (window.amplitude) {
+        window.amplitude.setUserId(null);
+        window.amplitude.regenerateDeviceId();
     }
 }
 
 async function handleForgotPassword(event) {
     event.preventDefault();
-    if (!loginForm || !loginMessage || !supabaseClient) return; 
+    if (!loginForm || !loginMessage || !supabaseClient) return;
     const email = loginForm.loginEmail.value || prompt("Please enter your email address to reset password:");
 
     if (!email) {
@@ -240,25 +322,31 @@ async function handleForgotPassword(event) {
     loginMessage.className = 'form-message info';
 
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + window.location.pathname, 
+        redirectTo: window.location.origin + window.location.pathname,
     });
 
     if (error) {
         loginMessage.textContent = `Error sending reset email: ${error.message}`;
         loginMessage.className = 'form-message error';
+        if (window.amplitude) {
+            window.amplitude.logEvent('Password Reset Requested Failed', { email: email, error_message: error.message });
+        }
     } else {
         loginMessage.textContent = "Password reset instructions sent to your email.";
         loginMessage.className = 'form-message success';
+        if (window.amplitude) {
+            window.amplitude.logEvent('Password Reset Requested', { email: email });
+        }
     }
 }
 
 
 // --- Event Listeners and Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
-    assignInstructionPageDOMElements(); 
+    assignInstructionPageDOMElements();
 
     if (!supabaseClient) {
-        showLockedContentUI(); 
+        showLockedContentUI();
         if (authPromptSection) {
              authPromptSection.innerHTML = `<div style="color: red; font-weight: bold; text-align: center; padding: 20px;">Error: Application cannot connect to backend services. Please try again later.</div>`;
         }
@@ -266,48 +354,70 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // --- Site Access Gate Check ---
     if (sessionStorage.getItem('instructionsAccessGranted') === 'true') {
         initializeInstructionsApp();
     } else {
-        // Updated to check against the current path to avoid loop if gate.html is somehow index.html
         const currentPath = window.location.pathname.substring(window.location.pathname.lastIndexOf("/") + 1);
-        if (currentPath !== 'gate.html') {
-            window.location.href = 'gate.html'; 
-            return; 
+        if (currentPath === 'home.html') {
+            window.location.href = '/'; // Or 'index.html' if server doesn't default to it
+            return;
         }
-        // If on gate.html, its own script handles it. Hide content on index.html if it were to load without grant.
-        if (authPromptSection) authPromptSection.classList.add('hidden');
-        if (unlockedContent) unlockedContent.classList.add('hidden');
+        else if (currentPath !== '' && currentPath !== 'index.html') {
+             window.location.href = '/'; // Or 'index.html'
+             return;
+        }
+        // If on index.html (gate page), its own script handles its UI.
+        // This app.js is mainly for home.html, so hide its content if loaded on gate page.
+        if (authPromptSection) {
+            authPromptSection.classList.add('hidden');
+            authPromptSection.style.display = 'none';
+        }
+        if (unlockedContent) {
+            unlockedContent.classList.add('hidden');
+            unlockedContent.style.display = 'none';
+        }
     }
 });
 
 function initializeInstructionsApp() {
-    console.log("Instructions app initializing after gate pass...");
+    console.log("Instructions app initializing after gate pass (app.js)...");
 
-    if (authPromptSection) authPromptSection.classList.remove('hidden'); 
-    if (unlockedContent) unlockedContent.classList.add('hidden'); // Start with unlocked content hidden until auth state confirms
+    // Ensure correct initial UI state before auth check
+    if (authPromptSection) {
+        authPromptSection.classList.remove('hidden');
+        authPromptSection.style.display = 'block'; // Show by default, auth check will hide if needed
+    }
+    if (unlockedContent) {
+        unlockedContent.classList.add('hidden');
+        unlockedContent.style.display = 'none'; // Hide by default, auth check will show if needed
+    }
+
 
     if (showSignupModalBtn) showSignupModalBtn.addEventListener('click', () => {
         hideModal(loginModal); showModal(signupModal);
         if(signupMessage) signupMessage.textContent = '';
         if(signupForm) signupForm.reset();
+        if (window.amplitude) window.amplitude.logEvent('Show Signup Modal');
     });
     if (showLoginModalBtn) showLoginModalBtn.addEventListener('click', () => {
         hideModal(signupModal); showModal(loginModal);
         if(loginMessage) loginMessage.textContent = '';
         if(loginForm) loginForm.reset();
+        if (window.amplitude) window.amplitude.logEvent('Show Login Modal');
     });
 
     document.querySelectorAll('.modal .close-button').forEach(button => {
         button.addEventListener('click', () => {
-            hideModal(button.closest('.modal'));
+            const modal = button.closest('.modal');
+            hideModal(modal);
+            if (window.amplitude) window.amplitude.logEvent('Modal Closed (X Button)', { modal_id: modal.id });
         });
     });
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (event) => {
             if (event.target === modal) {
                 hideModal(modal);
+                if (window.amplitude) window.amplitude.logEvent('Modal Closed (Background Click)', { modal_id: modal.id });
             }
         });
     });
@@ -321,21 +431,58 @@ function initializeInstructionsApp() {
         switchToLoginLinkFromSignup.addEventListener('click', (e) => {
             e.preventDefault(); hideModal(signupModal); showModal(loginModal);
             if(loginMessage) loginMessage.textContent = ''; if(loginForm) loginForm.reset();
+            if (window.amplitude) window.amplitude.logEvent('Switched to Login Modal (from Signup)');
         });
     }
     if (switchToSignupLinkFromLogin) {
         switchToSignupLinkFromLogin.addEventListener('click', (e) => {
             e.preventDefault(); hideModal(loginModal); showModal(signupModal);
             if(signupMessage) signupMessage.textContent = ''; if(signupForm) signupForm.reset();
+            if (window.amplitude) window.amplitude.logEvent('Switched to Signup Modal (from Login)');
         });
     }
+
+    // Amplitude default tracking for file downloads should handle this if enabled
+    // const downloadButton = document.querySelector('a.download-button[href="code.gs"]');
+    // if (downloadButton) {
+    //     downloadButton.addEventListener('click', () => {
+    //         // if (window.amplitude) {
+    //         //     window.amplitude.logEvent('Script Download Clicked', { filename: 'code.gs' });
+    //         // }
+    //     });
+    // }
 
     supabaseClient.auth.onAuthStateChange(async (_event, session) => {
         console.log('Auth state changed (Instructions Page - Email/Pass):', _event, session);
         if (session && session.user) {
             showUnlockedContentUI(session.user);
+            if ((_event === 'SIGNED_IN' || _event === 'USER_UPDATED' || _event === 'INITIAL_SESSION') && window.amplitude) {
+                 window.amplitude.setUserId(session.user.id);
+                 // Attempt to fetch profile name for Amplitude identify
+                 try {
+                    const { data: profileData, error: profileError } = await supabaseClient
+                        .from('profiles')
+                        .select('name')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    const identifyObj = new amplitude.Identify().set('email', session.user.email);
+                    if (!profileError && profileData && profileData.name) {
+                        identifyObj.set('name', profileData.name);
+                    }
+                    window.amplitude.identify(identifyObj);
+
+                } catch (e) {
+                    console.warn("Could not fetch profile name for Amplitude on auth change:", e);
+                    window.amplitude.identify(new amplitude.Identify().set('email', session.user.email)); // Fallback
+                }
+            }
         } else {
             showLockedContentUI();
+            if (_event === 'SIGNED_OUT' && window.amplitude) {
+                window.amplitude.setUserId(null);
+                window.amplitude.regenerateDeviceId();
+            }
         }
     });
 
@@ -343,7 +490,27 @@ function initializeInstructionsApp() {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && session.user) {
             console.log('Initial session valid for:', session.user.email);
-            showUnlockedContentUI(session.user);
+            showUnlockedContentUI(session.user); // This will also trigger Amplitude event if user is logged in
+            if (window.amplitude) {
+                window.amplitude.setUserId(session.user.id);
+                 // Attempt to fetch profile name for Amplitude identify
+                 try {
+                    const { data: profileData, error: profileError } = await supabaseClient
+                        .from('profiles')
+                        .select('name')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    const identifyObj = new amplitude.Identify().set('email', session.user.email);
+                    if (!profileError && profileData && profileData.name) {
+                        identifyObj.set('name', profileData.name);
+                    }
+                    window.amplitude.identify(identifyObj);
+                } catch (e) {
+                    console.warn("Could not fetch profile name for Amplitude on initial session check:", e);
+                    window.amplitude.identify(new amplitude.Identify().set('email', session.user.email)); // Fallback
+                }
+            }
         } else {
             console.log('No initial valid session.');
             showLockedContentUI();

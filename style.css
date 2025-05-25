@@ -14,10 +14,10 @@
     --heading-color: #2c3e50;
     --link-color: #007bff; /* Blue for links */
     --body-bg: #ffffff;
-    --container-bg: transparent; /* Or #ffffff if you want a distinct container bg */
-    --section-bg: #f9f9f9; /* For auth prompt and similar sections */
+    --container-bg: transparent; 
+    --section-bg: #f9f9f9; 
     --modal-bg: #fefefe;
-    --welcome-bg: #e8f8f5; /* Light teal for welcome message */
+    --welcome-bg: #e8f8f5; 
     --welcome-text: #0e6252;
     --warning-box-bg: #fef3cd;
     --warning-box-border: #ffeeba;
@@ -28,13 +28,12 @@
     --pre-text: #f8f8f2;
 
     /* Borders & Shadows */
-    --border-color: #dee2e6;    /* Light grey for borders */
-    --border-radius: .3rem;     /* Consistent border radius */
+    --border-color: #dee2e6;    
+    --border-radius: .3rem;     
     --box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
     --box-shadow-lg: 0 1rem 3rem rgba(0,0,0,.175);
 }
 
-/* --- Base and Container --- */
 body {
     font-family: 'Roboto', sans-serif;
     line-height: 1.7;
@@ -46,14 +45,13 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-.container { /* Main content container on index.html */
+.container { 
     max-width: 800px;
     margin: 30px auto;
     padding: 20px 30px;
     background-color: var(--container-bg);
 }
 
-/* Styles for gate.html's main container */
 .gate-container { 
     background-color: var(--section-bg); 
     padding: 30px 40px;
@@ -91,9 +89,8 @@ header h1 {
     margin-bottom: 5px;
 }
 
-/* --- Section Titles (H2, H3) --- */
 h2 {
-    color: var(--primary-color); /* Blue section titles */
+    color: var(--primary-color); 
     font-weight: 500;
     border-bottom: 2px solid var(--primary-color);
     padding-bottom: 8px;
@@ -109,7 +106,6 @@ h3 {
     font-size: 1.25em;
 }
 
-/* --- Text Elements --- */
 p, li { color: #444; margin-bottom: 12px; }
 ul, ol { padding-left: 25px; margin-bottom: 15px; }
 ul ul, ol ol { margin-top: 8px; margin-bottom: 8px; }
@@ -121,7 +117,7 @@ pre code { background-color: transparent; color: inherit; padding: 0; font-size:
 
 .download-button {
     display: inline-block;
-    background-color: var(--primary-color); /* Blue */
+    background-color: var(--primary-color); 
     color: white;
     padding: 12px 25px;
     text-decoration: none;
@@ -147,7 +143,6 @@ pre code { background-color: transparent; color: inherit; padding: 0; font-size:
 a { color: var(--link-color); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* --- Auth Prompt Section (Locked State) --- */
 #auth-prompt-section {
     padding: 30px 20px;
     border: 1px solid var(--border-color);
@@ -161,26 +156,56 @@ a:hover { text-decoration: underline; }
 #auth-prompt-section p { color: #555; margin-bottom: 25px; font-size: 1.05em; }
 .auth-actions { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
 .auth-actions button { padding: 10px 25px; font-size: 1em; font-weight: 500; border-radius: var(--border-radius); cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; border: none; }
-.auth-actions .button-primary,
-#proceedToVerificationBtn /* Style for gate.html button */
- { background-color: var(--primary-color); color: white; }
-.auth-actions .button-primary:hover,
-#proceedToVerificationBtn:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+
+.button-primary, /* General primary button class */
+#proceedToVerificationBtn, /* Gate button */
+.auth-actions .button-primary /* Auth prompt signup button */
+ { 
+    background-color: var(--primary-color); 
+    color: white; 
+    text-transform: uppercase;
+}
+.button-primary:hover,
+#proceedToVerificationBtn:hover,
+.auth-actions .button-primary:hover { 
+    background-color: var(--primary-hover); 
+    transform: translateY(-1px); 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Specific sizing for the main gate button */
+#proceedToVerificationBtn { 
+    padding: 12px 35px;      
+    font-size: 1.1em;        
+    box-shadow: var(--box-shadow);
+}
+#proceedToVerificationBtn:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+
 .auth-actions .button-secondary { background-color: var(--secondary-color); color: white; }
 .auth-actions .button-secondary:hover { background-color: var(--secondary-hover); transform: translateY(-1px); }
 
-/* --- General Modal Styles --- */
 .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow-y: auto; background-color: rgba(0,0,0,0.65); align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-in-out, visibility 0s linear 0.3s; padding: 20px 0; }
 .modal.modal-visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease-in-out, visibility 0s linear 0s; }
-.modal-content { background-color: var(--modal-bg); padding: 30px 35px; border: 1px solid var(--border-color); width: 90%; max-width: 450px; /* Consistent modal width */ border-radius: var(--border-radius); box-shadow: var(--box-shadow-lg); position: relative; opacity: 0; transform: translateY(-20px) scale(0.98); transition: opacity 0.25s ease-out 0.1s, transform 0.25s ease-out 0.1s; margin: auto; text-align: left; }
+.modal-content { background-color: var(--modal-bg); padding: 30px 35px; border: 1px solid var(--border-color); width: 90%; max-width: 450px; border-radius: var(--border-radius); box-shadow: var(--box-shadow-lg); position: relative; opacity: 0; transform: translateY(-20px) scale(0.98); transition: opacity 0.25s ease-out 0.1s, transform 0.25s ease-out 0.1s; margin: auto; text-align: left; }
 .modal.modal-visible .modal-content { opacity: 1; transform: translateY(0) scale(1); }
 .modal-content h2 { margin-top: 0; margin-bottom: 25px; color: var(--dark-color); text-align: center; font-size: 1.5em; font-weight: 600; border-bottom: none;}
 .close-button { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none;}
 .close-button:hover, .close-button:focus { color: #333; }
 .form-group { margin-bottom: 18px; }
 .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #444; font-size: 0.95em; }
-.form-group input[type="email"], .form-group input[type="password"], .form-group input[type="text"] {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--border-radius); box-sizing: border-box; font-size: 1em;
+.form-group input[type="email"], 
+.form-group input[type="password"], 
+.form-group input[type="text"], /* Added this implicitly when you added Name field */
+.form-group input[type="tel"] { /* Ensures phone field is styled */
+    width: 100%; 
+    padding: 10px 12px; 
+    border: 1px solid var(--border-color); 
+    border-radius: var(--border-radius); 
+    box-sizing: border-box; 
+    font-size: 1em;
 }
 .form-group input:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 2px rgba(0,123,255,.25); }
 .form-message { margin-top: 15px; padding: 8px; border-radius: 4px; font-size: 0.9em; text-align: center; }
@@ -188,7 +213,7 @@ a:hover { text-decoration: underline; }
 .form-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;}
 .form-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;}
 
-.modal-content .button-primary { /* For modal submit buttons */
+.modal-content .button-primary { 
     width: 100%; padding: 10px 15px; background-color: var(--primary-color); color: white; border: none; border-radius: var(--border-radius);
     font-size: 1em; font-weight: 500; cursor: pointer; transition: background-color 0.2s ease;
     display: flex; align-items: center; justify-content: center; text-transform: uppercase;
@@ -197,13 +222,12 @@ a:hover { text-decoration: underline; }
 .modal-content .button-primary:disabled { background-color: #aecbed; cursor: not-allowed; }
 .button-spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite; margin-left: 8px; }
 .modal-content .button-primary.loading .button-spinner { display: inline-block; }
-.modal-content .button-primary.loading .button-text { opacity: 0; } /* Hide text when spinner shows */
+.modal-content .button-primary.loading .button-text { opacity: 0; } 
 @keyframes spin { to { transform: rotate(360deg); } }
 .modal-switch { text-align: center; margin-top: 18px; font-size: 0.9em; }
 .modal-switch a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
 .modal-switch a:hover { text-decoration: underline; }
 
-/* --- Unlocked Content Specific --- */
 .welcome-message {
     background-color: var(--welcome-bg); 
     color: var(--welcome-text);
@@ -213,7 +237,7 @@ a:hover { text-decoration: underline; }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 1px solid #bdede0; /* Softer border for welcome */
+    border: 1px solid #bdede0; 
 }
 .welcome-message p { margin: 0; font-weight: 500; }
 .button-logout {
@@ -234,7 +258,6 @@ a:hover { text-decoration: underline; }
 footer { text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.9em; color: #7f8c8d; }
 footer a { color: var(--primary-color); font-weight: 500; }
 
-/* Responsive */
 @media (max-width: 768px) {
     .container, .gate-container { margin: 20px; padding: 15px 20px; }
     header h1 { font-size: 1.9em; }

@@ -2,7 +2,7 @@
 // ========================================================================
 //      GroupMe Bot: '+' Command to Copilot, Copilot Image Emailer, & Backup
 // ========================================================================
-// Version: 5.4.6 (Error reporting via Logger.log instead of email)
+// Version: 5.4.7 (Appends signature to GroupMe messages and Emails)
 // ========================================================================
 
 // --- BEGIN CONFIGURATION IN SCRIPT PROPERTIES ---
@@ -22,7 +22,7 @@ const PLUS_COMMAND_TO_COPILOT_PATTERN = /^\+\s*(.+)/;
 const ACTUAL_COPILOT_USER_ID = "128934125";
 const COPILOT_NICKNAME_FOR_MENTION = "@Copilot";
 
-const EMAIL_RECIPIENT_FOR_COPILOT_IMAGES = "YOR_PHONE_NUMBER@mypixmessages.com";
+const EMAIL_RECIPIENT_FOR_COPILOT_IMAGES = "YOR_PHONE_NUMBER@mypixmessages.com"; // IMPORTANT: User must change this
 const EMAIL_SUBJECT_FOR_COPILOT_IMAGES = "Image from Copilot: {{messageTextShort}}";
 const EMAIL_BODY_INTRO_FOR_COPILOT_IMAGES = "Image received from Copilot.<br>Accompanying text: \"<i>{{messageText}}</i>\"";
 
@@ -43,6 +43,8 @@ const CC_EMAILS_FOR_DEFAULT_IMAGES_KEY = 'CC_EMAILS_FOR_DEFAULT_IMAGES';
 const BCC_EMAILS_FOR_DEFAULT_IMAGES_KEY = 'BCC_EMAILS_FOR_DEFAULT_IMAGES';
 const EMAIL_SUBJECT_TEMPLATE_IMAGES_KEY = 'EMAIL_SUBJECT_TEMPLATE_IMAGES';
 const EMAIL_BODY_INTRO_TEMPLATE_IMAGES_KEY = 'EMAIL_BODY_INTRO_TEMPLATE_IMAGES';
+
+const SIGNATURE = " Shalom Karr"; // Define the signature
 // ========================================================================
 
 function doPost(e) {
@@ -54,7 +56,7 @@ function doPost(e) {
       senderUserId = "N/A", senderName = "N/A", messageText = "", attachmentsFromPost = [];
 
   try {
-    Logger.log("--- Bot v5.4.6: doPost Triggered ---");
+    Logger.log("--- Bot v5.4.7: doPost Triggered ---");
     if (!e || !e.postData || !e.postData.contents) {
       Logger.log("ERROR: No postData or no postData.contents received.");
       return ContentService.createTextOutput("");
@@ -76,7 +78,7 @@ function doPost(e) {
     }
 
     const scriptProperties = PropertiesService.getScriptProperties();
-    adminEmailAddress = scriptProperties.getProperty(ADMIN_EMAIL_KEY); // Still useful for logging context
+    adminEmailAddress = scriptProperties.getProperty(ADMIN_EMAIL_KEY); 
     groupMeUserToken = scriptProperties.getProperty(GROUPME_USER_TOKEN_KEY);
     groupMeAccessToken = scriptProperties.getProperty(GROUPME_ACCESS_TOKEN_KEY);
     const groupIdFriendlyNameMapJson = scriptProperties.getProperty(GROUP_ID_FRIENDLY_NAME_MAP_KEY);
@@ -278,7 +280,7 @@ function processAndSendImageEmail(messagePayload, imageUrls, emailConfig, groupI
   let imageAttachments = [];
   imageUrls.forEach(function(imageUrl, index) {
     const escUrl = escapeHtml(imageUrl);
-    if (emailConfig.recipientEmail !== EMAIL_RECIPIENT_FOR_COPILOT_IMAGES || index === 0) { // Show first image embedded for copilot, all for backup
+    if (emailConfig.recipientEmail !== EMAIL_RECIPIENT_FOR_COPILOT_IMAGES || index === 0) { 
         mainEmailContent += `<a href="${escUrl}">${escUrl}</a><br><img src="${escUrl}" alt="Image from GroupMe ${index + 1}" style="max-width:400px; height:auto; margin:5px 0 15px 0;"><br><br>`;
     }
     try {
@@ -317,13 +319,15 @@ function processAndSendImageEmail(messagePayload, imageUrls, emailConfig, groupI
     }
   });
 
-  const fullEmailBody = emailBodyIntro + mainEmailContent;
+  // --- MODIFICATION START: Append signature to email body ---
+  const fullEmailBody = emailBodyIntro + mainEmailContent + "<br><br>" + SIGNATURE;
+  // --- MODIFICATION END ---
 
   const mailOptions = {
     to: emailConfig.recipientEmail,
     subject: emailSubject,
     htmlBody: fullEmailBody,
-    name: "GroupMe Bot"
+    name: "GroupMe Bot" // Sender name for the email
   };
 
   if (imageAttachments.length > 0) {
@@ -362,22 +366,37 @@ function processAndSendImageEmail(messagePayload, imageUrls, emailConfig, groupI
 // GROUPME MESSAGING HELPERS
 // ========================================================================
 function sendNewMessageAsUser(textToSend, groupId, userAccessToken, targetMentionUserId, mentionNickname) {
-  // This function remains the same as it already logs errors rather than emailing them.
   const baseStatus = { success: false, statusMessage: "", statusCode: null };
   if (!textToSend || !groupId || !userAccessToken) {
     baseStatus.statusMessage = "Error: Missing params for sendNewMessageAsUser."; Logger.log(baseStatus.statusMessage); return baseStatus;
   }
-  let finalText = textToSend;
-  if (finalText.length > 1000) finalText = finalText.substring(0, 997) + "...";
+
+  // --- MODIFICATION START: Append signature to GroupMe message ---
+  let messageWithSignature = textToSend + SIGNATURE; // SIGNATURE already has a leading space
+  // --- MODIFICATION END ---
+
+  let finalText = messageWithSignature; 
+  
+  const maxLength = 1000; // GroupMe message length limit
+  if (finalText.length > maxLength) {
+    const availableLengthForText = maxLength - SIGNATURE.length - 3; // -3 for "..."
+    if (availableLengthForText > 0) {
+      finalText = textToSend.substring(0, availableLengthForText) + "..." + SIGNATURE;
+    } else {
+      finalText = SIGNATURE.substring(0, maxLength - 3) + "...";
+       Logger.log("Warning: Signature itself is very long, had to truncate signature for GroupMe message.");
+    }
+  }
 
   let attachments = [];
   if (targetMentionUserId && mentionNickname) {
     const mentionLength = mentionNickname.length;
-    if (finalText.toLowerCase().startsWith(mentionNickname.toLowerCase())) {
+    // Check if the *original* textToSend (before signature) starts with the mention
+    if (textToSend.toLowerCase().startsWith(mentionNickname.toLowerCase())) { 
          attachments.push({ type: "mentions", user_ids: [String(targetMentionUserId)], loci: [[0, mentionLength]] });
          Logger.log(`Mention attachment prepared for user ${targetMentionUserId} with nickname "${mentionNickname}"`);
     } else {
-        Logger.log(`Warning for sendNewMessageAsUser: Mention nickname "${mentionNickname}" not found at start of text "${finalText.substring(0,50)}...".`);
+        Logger.log(`Warning for sendNewMessageAsUser: Mention nickname "${mentionNickname}" not found at start of original text "${textToSend.substring(0,50)}...".`);
     }
   }
   const sourceGuid = Utilities.getUuid();
@@ -403,7 +422,7 @@ function checkAndEmailCopilotImages() {
   const scriptProperties = PropertiesService.getScriptProperties();
   const groupMeAccessToken = scriptProperties.getProperty(GROUPME_ACCESS_TOKEN_KEY);
   const groupIdFriendlyNameMapJson = scriptProperties.getProperty(GROUP_ID_FRIENDLY_NAME_MAP_KEY);
-  const adminEmailAddress = scriptProperties.getProperty(ADMIN_EMAIL_KEY); // For logging context
+  const adminEmailAddress = scriptProperties.getProperty(ADMIN_EMAIL_KEY); 
 
   if (!groupMeAccessToken || !groupIdFriendlyNameMapJson) {
     Logger.log(`Timer ERROR: Missing critical props for checkAndEmailCopilotImages. GroupMeAccessToken Set: ${!!groupMeAccessToken}, GroupIdMap Set: ${!!groupIdFriendlyNameMapJson}. Admin Email: ${adminEmailAddress || 'Not Set'}`);
@@ -429,11 +448,11 @@ function checkAndEmailCopilotImages() {
     try {
       const messagesUrl = `https://api.groupme.com/v3/groups/${groupId}/messages?token=${groupMeAccessToken}&limit=${MESSAGES_TO_FETCH_FOR_TIMER}`;
       const response = UrlFetchApp.fetch(messagesUrl, { muteHttpExceptions: true });
-      const responseCode = response.getResponseCode(); // Get response code first
-      const responseText = response.getContentText(); // Then get text
+      const responseCode = response.getResponseCode(); 
+      const responseText = response.getContentText(); 
 
       if (responseCode === 200) {
-        const data = JSON.parse(responseText); // Parse only if 200 OK
+        const data = JSON.parse(responseText); 
         if (data.response && data.response.messages && data.response.messages.length > 0) {
           for (const message of data.response.messages.reverse()) {
             if (message.sender_id === ACTUAL_COPILOT_USER_ID && !isMessageProcessed(message.id, PROCESSED_COPILOT_IMAGE_IDS_KEY)) {
@@ -467,7 +486,7 @@ function manuallyProcessRecentGroupMeImages() {
   const groupMeAccessToken = scriptProperties.getProperty(GROUPME_ACCESS_TOKEN_KEY);
   const groupIdFriendlyNameMapJson = scriptProperties.getProperty(GROUP_ID_FRIENDLY_NAME_MAP_KEY);
   const recipientEmail = scriptProperties.getProperty(RECIPIENT_EMAIL_FOR_DEFAULT_IMAGES_KEY);
-  const adminEmailAddress = scriptProperties.getProperty(ADMIN_EMAIL_KEY); // For logging context
+  const adminEmailAddress = scriptProperties.getProperty(ADMIN_EMAIL_KEY); 
 
   if (!groupMeAccessToken || !groupIdFriendlyNameMapJson || !recipientEmail) {
     Logger.log(`Timer/Manual ERROR: Missing critical properties. AccessToken: ${!!groupMeAccessToken}, GroupMap: ${!!groupIdFriendlyNameMapJson}, RecipientEmail: ${!!recipientEmail}. Admin Email: ${adminEmailAddress || 'Not Set'}`);
@@ -503,11 +522,11 @@ function manuallyProcessRecentGroupMeImages() {
     try {
       const messagesUrl = `https://api.groupme.com/v3/groups/${groupId}/messages?token=${groupMeAccessToken}&limit=${MESSAGES_TO_FETCH_FOR_TIMER}`;
       const response = UrlFetchApp.fetch(messagesUrl, { muteHttpExceptions: true });
-      const responseCode = response.getResponseCode(); // Get response code first
-      const responseText = response.getContentText(); // Then get text
+      const responseCode = response.getResponseCode(); 
+      const responseText = response.getContentText(); 
 
       if (responseCode === 200) {
-        const data = JSON.parse(responseText); // Parse only if 200 OK
+        const data = JSON.parse(responseText); 
         if (data.response && data.response.messages && data.response.messages.length > 0) {
           Logger.log(`Timer/Manual: Group "${groupName}" - Found ${data.response.messages.length} messages.`);
           for (const message of data.response.messages.reverse()) {
@@ -543,7 +562,6 @@ function manuallyProcessRecentGroupMeImages() {
 // PROCESSED MESSAGE ID HELPERS (Uses ScriptProperties)
 // ========================================================================
 function isMessageProcessed(messageId, storageKey) {
-  // This function remains the same as it already logs warnings rather than emailing.
   const scriptProperties = PropertiesService.getScriptProperties();
   const processedIdsJson = scriptProperties.getProperty(storageKey);
   if (processedIdsJson) {
@@ -559,7 +577,6 @@ function isMessageProcessed(messageId, storageKey) {
 }
 
 function markMessageAsProcessed(messageId, storageKey) {
-  // This function has been modified to log errors instead of emailing them.
   const scriptProperties = PropertiesService.getScriptProperties();
   let processedIds = [];
   const processedIdsJson = scriptProperties.getProperty(storageKey);
@@ -594,8 +611,6 @@ function markMessageAsProcessed(messageId, storageKey) {
 // ========================================================================
 // UTILITY FUNCTIONS
 // ========================================================================
-// These (isValidJsonObject, replacePlaceholders, escapeHtml, viewConfiguredPropertiesInLog, testSpecificGroupMeMessagesFetch)
-// remain unchanged as they either don't send error emails or are for testing.
 function isValidJsonObject(obj) { return typeof obj === 'object' && obj !== null && !Array.isArray(obj); }
 
 function replacePlaceholders(template, data) {
@@ -612,9 +627,10 @@ function replacePlaceholders(template, data) {
 function escapeHtml(text) {
   if (text == null) return "";
   return String(text)
-    .replace(/&/g, "&")
+    .replace(/&/g, "&") // Must be first
     .replace(/</g, "<")
     .replace(/>/g, ">")
+    .replace(/"/g, """)
     .replace(/'/g, "'");
 }
 
@@ -632,28 +648,20 @@ function viewConfiguredPropertiesInLog() {
 }
 
 function testSpecificGroupMeMessagesFetch() {
-  const url = "https://api.groupme.com/v3/groups/107719625/messages?token=OtLYPU5bLqmgkbjmuqxGBqcfaNuvGVbYrR2ecbxh&limit=20"; // Example URL, replace if needed
+  const url = "https://api.groupme.com/v3/groups/107719625/messages?token=OtLYPU5bLqmgkbjmuqxGBqcfaNuvGVbYrR2ecbxh&limit=20"; 
   Logger.log("Attempting to fetch: " + url);
   try {
-    const options = {
-      muteHttpExceptions: true
-    };
+    const options = { muteHttpExceptions: true };
     const response = UrlFetchApp.fetch(url, options);
     const responseCode = response.getResponseCode();
     const responseText = response.getContentText();
     Logger.log(`Test Fetch - Status: ${responseCode}`);
     Logger.log(`Test Fetch - Response Text (first 500 chars): ${responseText.substring(0, 500)}`);
-
-    if (responseCode !== 200) {
-      Logger.log(`ERROR during test fetch. Full response: ${responseText}`);
-    } else {
-      Logger.log("Test fetch successful!");
-    }
+    if (responseCode !== 200) Logger.log(`ERROR during test fetch. Full response: ${responseText}`);
+    else Logger.log("Test fetch successful!");
   } catch (e) {
     Logger.log(`Exception during test fetch: ${e.toString()}`);
     Logger.log(`Stack: ${e.stack}`);
-    if (e.message && e.message.toLowerCase().includes("address unavailable")) { // Check if e.message exists
-        Logger.log("CONFIRMED: The exception itself contains 'Address unavailable'.");
-    }
+    if (e.message && e.message.toLowerCase().includes("address unavailable")) Logger.log("CONFIRMED: The exception itself contains 'Address unavailable'.");
   }
 }
