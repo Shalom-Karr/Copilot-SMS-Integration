@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Setup Guide - Verification</title>
+    <title>Setup: GroupMe Copilot Image Bot</title>
     <link rel="stylesheet" href="style.css"> 
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
@@ -17,154 +17,262 @@
     </script>
     <!-- END AMPLITUDE SNIPPET -->
 
-    <style>
-        body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 20px; box-sizing: border-box; }
-        .gate-container { padding: 30px 40px; max-width: 500px; width: 100%; margin-bottom: 30px; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
-    <div class="gate-container" id="initialGateContent">
-        <h1>Setup Guide Access</h1>
-        <p>To access the setup instructions, a quick verification is required.</p>
-        <button id="proceedToVerificationBtn" class="button-primary">Proceed to Verification</button>
-    </div>
+    <header>
+        <h1>Setup: GroupMe Copilot Image Bot</h1>
+    </header>
 
-    <div id="siteGateTwoFactorAuthModal" class="modal"> 
+    <div class="container">
+        <!-- Introductory Section -->
+        <section class="intro-summary">
+            <p>Welcome! This page provides a new, streamlined way to set up your <strong>GroupMe Copilot Image Bot</strong>. This tool automatically forwards images from AI Copilot (and other users) in GroupMe to your email, making them easy to save and share.</p>
+            <p>Simply sign up or log in to access the configuration form. Fill in your details, and we'll generate a personalized <code>Code.gs</code> script file for you to download and use. No more manual code editing!</p>
+        </section>
+
+        <!-- Auth Prompt Section -->
+        <section id="auth-prompt-section"> 
+            <h2>Unlock the Bot Generator</h2>
+            <p>Sign up or log in to access the configuration form and the rest of the setup guide.</p>
+            <div class="auth-actions">
+                <button id="showSignupModalBtn" class="button-primary">Sign Up</button>
+                <button id="showLoginModalBtn" class="button-secondary">Log In</button>
+            </div>
+        </section>
+
+        <!-- Welcome Message -->
+        <div class="welcome-message hidden" id="welcomeMessageDiv"> 
+            <p>Welcome! You can now configure and generate your bot script. <button id="logoutButton" class="button-logout">Logout</button></p>
+        </div>
+
+        <!-- Gated Content: Form and Instructions -->
+        <div id="gated-instructions-content" class="hidden">
+            <main id="setup-guide-section">
+                <!-- Step 1: Configuration Form -->
+                <article class="phase">
+                    <h2>Step 1: Configure Your Bot & Generate Script</h2>
+                    <p>Fill out the form below with your details. Once complete, click the "Generate & Download Script" button at the bottom. This will create a personalized <code>Code.gs</code> file for you.</p>
+                    
+                    <form id="config-form" class="config-form-container">
+                        <p id="form-error-message" class="form-message error" style="display: none;"></p>
+                        
+                        <!-- Required Settings -->
+                        <div class="form-group">
+                            <label for="groupme-token">GroupMe Access Token <span class="required">*</span></label>
+                            <input type="text" id="groupme-token" name="groupme-token" placeholder="Paste your token here" required>
+                            <small>Find this at <a href="https://dev.groupme.com/applications" target="_blank">dev.groupme.com/applications</a>. This single token is used for both reading and sending messages.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="forwarding-email">Image Forwarding Email <span class="required">*</span></label>
+                            <input type="email" id="forwarding-email" name="forwarding-email" placeholder="your-phone-number@mypixmessages.com" required>
+                            <small>The email address where all forwarded images will be sent. Use your phone's SMS/MMS gateway email for easy saving.</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="group-id">Group ID <span class="required">*</span></label>
+                            <input type="text" id="group-id" name="group-id" placeholder="e.g., 12345678" required>
+                            <small>Get the Group ID from the URL when viewing the group on GroupMe's website (e.g., .../web/groups/<strong>12345678</strong>).</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="group-name">Group's Friendly Name <span class="required">*</span></label>
+                            <input type="text" id="group-name" name="group-name" placeholder="e.g., My Main Chat" required>
+                            <small>A name for your group, used in email subjects for clarity.</small>
+                        </div>
+
+                        <!-- Advanced Settings -->
+                        <details class="advanced-options">
+                            <summary>Advanced Email Settings (Optional)</summary>
+                            <div class="details-content">
+                                <div class="form-group">
+                                    <label for="admin-email">Admin Email for Logs</label>
+                                    <input type="email" id="admin-email" name="admin-email" placeholder="you@example.com">
+                                    <small>Your email, for reference in the script's execution logs in case of errors.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cc-emails">CC Emails</label>
+                                    <input type="text" id="cc-emails" name="cc-emails" placeholder="friend1@example.com, friend2@example.com">
+                                    <small>Comma-separated list of emails to CC on forwarded image emails.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bcc-emails">BCC Emails</label>
+                                    <input type="text" id="bcc-emails" name="bcc-emails" placeholder="archive@example.com">
+                                    <small>Comma-separated list of emails to BCC on forwarded image emails.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="backup-subject">Custom Subject for Non-Copilot Emails</label>
+                                    <input type="text" id="backup-subject" name="backup-subject" placeholder="Image from {{senderName}} in {{friendlyGroupName}}">
+                                    <small>Customize the subject for images from regular users. Uses placeholders like <code>{{senderName}}</code>.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="backup-body">Custom Body Intro for Non-Copilot Emails</label>
+                                    <textarea id="backup-body" name="backup-body" rows="3" placeholder="Image from {{senderName}} with message: {{messageText}}"></textarea>
+                                    <small>HTML is allowed. Use the same placeholders as the subject line.</small>
+                                </div>
+                            </div>
+                        </details>
+
+                        <button type="submit" class="button-primary download-button">
+                             <span class="button-text">Generate & Download Script</span>
+                             <span class="button-spinner"></span>
+                        </button>
+                    </form>
+                </article>
+
+                <!-- Subsequent Steps -->
+                <article class="phase">
+                    <h2>Step 2: Google Apps Script Project Setup</h2>
+                    <ol>
+                        <li>Go to <a href="https://script.google.com" target="_blank" rel="noopener noreferrer">script.google.com</a> and click "<strong>+ New project</strong>".</li>
+                        <li>Rename the project to something descriptive (e.g., "GroupMe Copilot Bot").</li>
+                        <li>The editor opens with a <code>Code.gs</code> file. <strong>Delete all the default content</strong> inside it.</li>
+                        <li>Open the <code>Code.gs</code> file you just downloaded from this page. Copy its <strong>entire content</strong>.</li>
+                        <li>Paste the content into the empty <code>Code.gs</code> file in your Apps Script project.</li>
+                        <li>Click the <strong>Save project</strong> icon (💾).</li>
+                    </ol>
+                </article>
+
+                <article class="phase">
+                    <h2>Step 3: Deploy as a Web App</h2>
+                    <ol>
+                        <li>In the Apps Script editor, click the blue "<strong>Deploy</strong>" button (top right) and select "<strong>New deployment</strong>".</li>
+                        <li>Click the gear icon (⚙️) next to "Select type" and choose "<strong>Web app</strong>".</li>
+                        <li>Fill in the details:
+                            <ul>
+                                <li><strong>Description:</strong> e.g., "GroupMe Bot v6"</li>
+                                <li><strong>Execute as:</strong> "<strong>Me (your.email@example.com)</strong>"</li>
+                                <li><strong>Who has access:</strong> "<strong>Anyone</strong>"</li>
+                            </ul>
+                        </li>
+                        <li>Click "<strong>Deploy</strong>".</li>
+                        <li><strong>Authorize Permissions:</strong> A new window will pop up. Click "Authorize access", choose your Google account, click "Advanced", then "Go to [Project Name] (unsafe)", and finally "Allow".</li>
+                        <li>After authorizing, a "Deployment successfully updated" window appears. <strong>Copy the Web app URL</strong>. You'll need it in the next step.</li>
+                    </ol>
+                </article>
+
+                <article class="phase">
+                    <h2>Step 4: Create the GroupMe Bot</h2>
+                    <ol>
+                        <li>Go to <a href="https://dev.groupme.com/bots" target="_blank" rel="noopener noreferrer">https://dev.groupme.com/bots</a> and click "<strong>Create Bot</strong>".</li>
+                        <li>Select the GroupMe group where the bot will live.</li>
+                        <li>Give your bot a name (e.g., "Copilot Listener").</li>
+                        <li>In the "<strong>Callback URL</strong>" field, paste the Web app URL you copied from the previous step.</li>
+                        <li>Click "<strong>Submit</strong>". Your bot is now in your group!</li>
+                    </ol>
+                </article>
+
+                <article class="phase">
+                    <h2>Step 5: Set Up Time-Driven Triggers</h2>
+                    <p>These triggers automatically check for new images, ensuring nothing is missed even if the callback fails.</p>
+                    <ol>
+                        <li>In your Apps Script project, click the "<strong>Triggers</strong>" icon (⏰ clock) on the left sidebar.</li>
+                        <li>Click "<strong>+ Add Trigger</strong>" (bottom right).</li>
+                        <li><strong>Configure the first trigger for Copilot images:</strong>
+                            <ul>
+                                <li>Choose which function to run: <code>checkAndEmailCopilotImages</code></li>
+                                <li>Select event source: <code>Time-driven</code></li>
+                                <li>Select type of time-based trigger: <code>Minutes timer</code></li>
+                                <li>Select minute interval: <code>Every minute</code></li>
+                                <li>Failure notification settings: <code>Notify me immediately</code></li>
+                                <li>Click <strong>Save</strong>.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Configure the second trigger for other images:</strong>
+                            <ul>
+                                <li>Choose which function to run: <code>manuallyProcessRecentGroupMeImages</code></li>
+                                <li>Select event source: <code>Time-driven</code></li>
+                                <li>Select type of time-based trigger: <code>Minutes timer</code></li>
+                                <li>Select minute interval: <code>Every minute</code></li>
+                                <li>Click <strong>Save</strong>.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </article>
+
+                <article class="phase warning-box">
+                    <h2>Step 6: Testing</h2>
+                    <p>Your bot should now be fully operational. Here's how to test it:</p>
+                    <ol>
+                        <li><strong>'+' Command:</strong> In your GroupMe chat, type <code>+ tell me a joke</code>. The bot should immediately (acting as you) post a new message: <code>@Copilot tell me a joke</code>.</li>
+                        <li><strong>Copilot Image Emailing:</strong> Ask Copilot for an image (e.g., <code>@Copilot show me a picture of a cat</code>). When it posts an image, you should receive an email at the address you configured. This may take up to a minute due to the trigger.</li>
+                        <li><strong>Other User Image Emailing:</strong> Post any image to the group yourself. You should receive an email at the same address. This may also take up to a minute.</li>
+                        <li><strong>Troubleshooting:</strong> If something doesn't work, go to the "<strong>Executions</strong>" page (📊 icon) in your Apps Script project to view logs and identify errors.</li>
+                    </ol>
+                </article>
+            </main>
+        </div> <!-- End gated-instructions-content -->
+
+        <footer>
+            <p>Good luck with your setup! If you found this useful, consider sending me an <a href="mailto:copilotimagesfromgroupme@gmail.com"> Email to copilotimagesforgroupme@gmail.com </a>thanking me! - Shalom Karr</p>
+        </footer>
+    </div> 
+
+    <!-- Modals (initially hidden) -->
+    <div id="signupModal" class="modal">
         <div class="modal-content">
-            <span class="close-button" id="closeSiteGateTwoFactorAuthModalBtn">×</span>
-            <h2>Verification Required</h2>
-            <p id="siteGateTwoFactorAuthInstruction">A 6-digit code is needed to proceed. Please enter the code you received.</p>
-            <form id="siteGateTwoFactorAuthForm">
-                <div class="form-group"> 
-                    <label for="siteGateTwoFactorAuthCode">Verification Code:</label>
-                    <input type="text" id="siteGateTwoFactorAuthCode" name="siteGateTwoFactorAuthCode" required maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="one-time-code">
+            <span class="close-button">×</span>
+            <h2>Create Account to Use Generator</h2> 
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" name="signupEmail" placeholder="you@example.com" required autocomplete="email">
                 </div>
-                <button type="submit" class="button-primary"> 
-                    Verify & View Instructions
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" name="signupName" placeholder="Your Full Name" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" name="signupPassword" placeholder="Choose a password (min. 6 characters)" required autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="signupPhone">Phone Number</label>
+                    <input type="tel" id="signupPhone" name="signupPhone" placeholder="e.g., 123-456-7890" required autocomplete="tel">
+                </div>
+                <div class="cf-turnstile" id="signup-turnstile-widget" data-sitekey="0x4AAAAAABeUvDgLI36t5lu-"></div>
+                <p id="signupMessage" class="form-message"></p>
+                <button type="submit" class="button-primary">
+                    <span class="button-text">Sign Up</span>
+                    <span class="button-spinner"></span>
                 </button>
-                <p id="siteGateTwoFactorAuthMessage" class="form-message"></p>
             </form>
+            <p class="modal-switch">Already have an account? <a href="#" id="switchToLoginLinkFromSignup">Log In</a></p>
         </div>
     </div>
 
-    <script>
-        let siteGateGeneratedCode = '';
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">×</span>
+            <h2>Log In to Use Generator</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" name="loginEmail" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" name="loginPassword" placeholder="Your password" required>
+                </div>
+                <div class="cf-turnstile" id="login-turnstile-widget" data-sitekey="0x4AAAAAABeUvDgLI36t5lu-"></div>
+                <p id="loginMessage" class="form-message"></p>
+                <button type="submit" class="button-primary">
+                    <span class="button-text">Log In</span>
+                    <span class="button-spinner"></span>
+                </button>
+            </form>
+            <p class="modal-switch">
+                <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+            </p>
+            <p class="modal-switch">
+                Don't have an account? <a href="#" id="switchToSignupLinkFromLogin">Sign Up</a>
+            </p>
+        </div>
+    </div>
 
-        function showSiteGateModal() {
-            const modal = document.getElementById('siteGateTwoFactorAuthModal');
-            if (modal) {
-                modal.style.display = 'flex'; 
-                requestAnimationFrame(() => { modal.classList.add('modal-visible'); });
-            }
-        }
-
-        function hideSiteGateModal() {
-            const modal = document.getElementById('siteGateTwoFactorAuthModal');
-            if (modal) {
-                modal.classList.remove('modal-visible');
-                setTimeout(() => { if (!modal.classList.contains('modal-visible')) { modal.style.display = 'none'; } }, 300);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const proceedBtn = document.getElementById('proceedToVerificationBtn');
-            const siteGateModal = document.getElementById('siteGateTwoFactorAuthModal');
-            const siteGateForm = document.getElementById('siteGateTwoFactorAuthForm');
-            const siteGateCodeField = document.getElementById('siteGateTwoFactorAuthCode');
-            const siteGateMessage = document.getElementById('siteGateTwoFactorAuthMessage');
-            const siteGateInstruction = document.getElementById('siteGateTwoFactorAuthInstruction');
-            const closeSiteGateBtn = document.getElementById('closeSiteGateTwoFactorAuthModalBtn');
-            const initialGateContent = document.getElementById('initialGateContent');
-
-            // Autocapture should handle page views if enabled in init.
-            // If specific event needed:
-            // if (window.amplitude) {
-            //     window.amplitude.logEvent('Page View', { page_name: 'Instructions Verification Gate' });
-            // }
-
-            if (proceedBtn) {
-                proceedBtn.addEventListener('click', () => {
-                    siteGateGeneratedCode = Math.floor(100000 + Math.random() * 900000).toString();
-                    console.log("INSTRUCTIONS ACCESS Verification Code (New index.html - Gate): " + siteGateGeneratedCode);
-
-                    alert("A 6-digit verification code is required to view the instructions.\n\nFor demonstration purposes, your code is: " + siteGateGeneratedCode + "\n\nPlease enter this code in the verification screen.");
-                    
-                    if (siteGateInstruction) {
-                         siteGateInstruction.textContent = "A 6-digit verification code is required. Please enter the provided code to access the instructions.";
-                    }
-                    if (siteGateForm) siteGateForm.reset();
-                    if (siteGateMessage) {
-                        siteGateMessage.textContent = '';
-                        siteGateMessage.className = 'form-message';
-                    }
-                    
-                    if(initialGateContent) initialGateContent.style.display = 'none'; 
-                    showSiteGateModal();
-                    if (siteGateCodeField) siteGateCodeField.focus();
-
-                    if (window.amplitude) {
-                        window.amplitude.logEvent('Gate Verification Initiated');
-                    }
-                });
-            }
-
-            if (siteGateForm) {
-                siteGateForm.addEventListener('submit', (event) => {
-                    event.preventDefault();
-                    const enteredCode = siteGateCodeField.value;
-                    if (enteredCode === siteGateGeneratedCode) {
-                        siteGateMessage.textContent = "Verification successful! Loading instructions...";
-                        siteGateMessage.className = 'form-message success';
-                        sessionStorage.setItem('instructionsAccessGranted', 'true'); 
-                        
-                        if (window.amplitude) {
-                            window.amplitude.logEvent('Gate Verification Succeeded');
-                        }
-
-                        setTimeout(() => {
-                            window.location.href = 'home.html'; // *** CORRECTED REDIRECT ***
-                        }, 1000);
-                    } else {
-                        siteGateMessage.textContent = "Invalid verification code. Please try again.";
-                        siteGateMessage.className = 'form-message error';
-                        
-                        if (window.amplitude) {
-                            window.amplitude.logEvent('Gate Verification Failed', { reason: 'Invalid Code' });
-                        }
-                        siteGateCodeField.value = '';
-                        siteGateCodeField.focus();
-                    }
-                });
-            }
-
-            if (closeSiteGateBtn) {
-                closeSiteGateBtn.addEventListener('click', () => {
-                    hideSiteGateModal();
-                    if(initialGateContent) initialGateContent.style.display = 'block';
-                    if (siteGateMessage) {
-                        siteGateMessage.textContent = '';
-                        siteGateMessage.className = 'form-message';
-                    }
-                     if (window.amplitude) {
-                        window.amplitude.logEvent('Gate Verification Modal Closed');
-                    }
-                });
-            }
-            
-            window.addEventListener('click', (event) => {
-                if (event.target === siteGateModal) {
-                    hideSiteGateModal();
-                    if(initialGateContent) initialGateContent.style.display = 'block';
-                     if (siteGateMessage) {
-                        siteGateMessage.textContent = '';
-                        siteGateMessage.className = 'form-message';
-                    }
-                    if (window.amplitude) {
-                        window.amplitude.logEvent('Gate Verification Modal Closed (Background Click)');
-                    }
-                }
-            });
-        });
-    </script>
+    <script src="app.js"></script>
+    <script src='https://cdn.jotfor.ms/agent/embedjs/01971f4f233076d0b81323ed1321f6513f7c/embed.js?skipWelcome=1&maximizable=1'></script>
 </body>
 </html>
