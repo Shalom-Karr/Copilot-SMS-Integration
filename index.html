@@ -150,6 +150,11 @@
                             <summary>Advanced Email Settings (Optional)</summary>
                             <div class="details-content">
                                 <div class="form-group">
+                                    <label for="sender-name">Email Sender Name</label>
+                                    <input type="text" id="sender-name" name="sender-name" placeholder="Shalom Karr's GroupMe Bot">
+                                    <small>The "From" name that will appear in your email inbox.</small>
+                                </div>
+                                <div class="form-group">
                                     <label for="universal-cc-email">Universal CC Email for All Images</label>
                                     <input type="email" id="universal-cc-email" name="universal-cc-email" placeholder="1234567890@mypixmessages.com">
                                     <small>This address will be CC'd on <strong>every</strong> image email. Ideal for SMS/MMS gateways.</small>
@@ -181,7 +186,7 @@
                         <li>Delete all the default content in the <code>Code.gs</code> file.</li>
                         <li>Open the <code>Code.gs</code> file you just downloaded, copy its entire content, and paste it into the empty editor.</li>
                         <li>Click the <strong>Save project</strong> icon (💾).</li>
-                        <li><strong>CRITICAL:</strong> A dialog will pop up asking for authorization. Click "Review permissions", select your account, click "Advanced", then "Go to [Project Name] (unsafe)", and finally "Allow". This is required for the script to manage its own triggers.</li>
+                        <li><strong>CRITICAL:</strong> A dialog will likely pop up asking for authorization. Click "Review permissions", select your account, click "Advanced", then "Go to [Project Name] (unsafe)", and finally "Allow". This is required for the script to manage its own triggers.</li>
                     </ol>
                 </article>
 
@@ -211,11 +216,11 @@
                 </article>
 
                 <article class="phase warning-box">
-                    <h2>Step 5: Set Up the Failsafe Backup Trigger</h2>
-                    <p>This is the most important change. The new script manages its own high-speed triggers automatically. You only need to create **ONE** permanent backup trigger.</p>
+                    <h2>Step 5: Set Up the Failsafe Backup Trigger (One Time Only)</h2>
+                    <p>The new script creates high-speed triggers automatically. You only need to create **ONE** permanent backup trigger to catch anything that might be missed.</p>
                     <ol>
                         <li>In your Apps Script project, click the "<strong>Triggers</strong>" icon (⏰ clock) on the left sidebar.</li>
-                        <li>If you have any old triggers from previous versions, **DELETE ALL of them**.</li>
+                        <li>If you have any old triggers from previous versions, **DELETE ALL of them**. The page should be empty.</li>
                         <li>Click "<strong>+ Add Trigger</strong>" in the bottom right.</li>
                         <li>Configure the new trigger with these exact settings:
                             <ul>
@@ -249,38 +254,9 @@
         </footer>
     </div> 
 
-    <!-- Modals (initially hidden) -->
-    <div id="signupModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">×</span>
-            <h2>Create Account to Use Generator</h2> 
-            <form id="signupForm">
-                <div class="form-group"><label for="signupEmail">Email</label><input type="email" id="signupEmail" name="signupEmail" placeholder="you@example.com" required autocomplete="email"></div>
-                <div class="form-group"><label for="signupName">Full Name</label><input type="text" id="signupName" name="signupName" placeholder="Your Full Name" required autocomplete="name"></div>
-                <div class="form-group"><label for="signupPassword">Password</label><input type="password" id="signupPassword" name="signupPassword" placeholder="Choose a password (min. 6 characters)" required autocomplete="new-password"></div>
-                <div class="form-group"><label for="signupPhone">Phone Number</label><input type="tel" id="signupPhone" name="signupPhone" placeholder="e.g., 123-456-7890" required autocomplete="tel"></div>
-                <div class="cf-turnstile" id="signup-turnstile-widget"></div>
-                <p id="signupMessage" class="form-message"></p>
-                <button type="submit" class="button-primary"><span class="button-text">Sign Up</span><span class="button-spinner"></span></button>
-            </form>
-            <p class="modal-switch">Already have an account? <a href="#" id="switchToLoginLinkFromSignup">Log In</a></p>
-        </div>
-    </div>
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">×</span>
-            <h2>Log In to Use Generator</h2>
-            <form id="loginForm">
-                <div class="form-group"><label for="loginEmail">Email</label><input type="email" id="loginEmail" name="loginEmail" placeholder="you@example.com" required></div>
-                <div class="form-group"><label for="loginPassword">Password</label><input type="password" id="loginPassword" name="loginPassword" placeholder="Your password" required></div>
-                <div class="cf-turnstile" id="login-turnstile-widget"></div>
-                <p id="loginMessage" class="form-message"></p>
-                <button type="submit" class="button-primary"><span class="button-text">Log In</span><span class="button-spinner"></span></button>
-            </form>
-            <p class="modal-switch"><a href="#" id="forgotPasswordLink">Forgot Password?</a></p>
-            <p class="modal-switch">Don't have an account? <a href="#" id="switchToSignupLinkFromLogin">Sign Up</a></p>
-        </div>
-    </div>
+    <!-- Modals -->
+    <div id="signupModal" class="modal"><div class="modal-content"><span class="close-button">×</span><h2>Create Account to Use Generator</h2><form id="signupForm"><div class="form-group"><label for="signupEmail">Email</label><input type="email" id="signupEmail" name="signupEmail" placeholder="you@example.com" required autocomplete="email"></div><div class="form-group"><label for="signupName">Full Name</label><input type="text" id="signupName" name="signupName" placeholder="Your Full Name" required autocomplete="name"></div><div class="form-group"><label for="signupPassword">Password</label><input type="password" id="signupPassword" name="signupPassword" placeholder="Choose a password (min. 6 characters)" required autocomplete="new-password"></div><div class="form-group"><label for="signupPhone">Phone Number</label><input type="tel" id="signupPhone" name="signupPhone" placeholder="e.g., 123-456-7890" required autocomplete="tel"></div><div class="cf-turnstile" id="signup-turnstile-widget"></div><p id="signupMessage" class="form-message"></p><button type="submit" class="button-primary"><span class="button-text">Sign Up</span><span class="button-spinner"></span></button></form><p class="modal-switch">Already have an account? <a href="#" id="switchToLoginLinkFromSignup">Log In</a></p></div></div>
+    <div id="loginModal" class="modal"><div class="modal-content"><span class="close-button">×</span><h2>Log In to Use Generator</h2><form id="loginForm"><div class="form-group"><label for="loginEmail">Email</label><input type="email" id="loginEmail" name="loginEmail" placeholder="you@example.com" required></div><div class="form-group"><label for="loginPassword">Password</label><input type="password" id="loginPassword" name="loginPassword" placeholder="Your password" required></div><div class="cf-turnstile" id="login-turnstile-widget"></div><p id="loginMessage" class="form-message"></p><button type="submit" class="button-primary"><span class="button-text">Log In</span><span class="button-spinner"></span></button></form><p class="modal-switch"><a href="#" id="forgotPasswordLink">Forgot Password?</a></p><p class="modal-switch">Don't have an account? <a href="#" id="switchToSignupLinkFromLogin">Sign Up</a></p></div></div>
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -346,10 +322,14 @@
             configForm.addEventListener('submit', (event) => {
                 event.preventDefault();
                 const formValues = {
-                    token: document.getElementById('groupme-token').value, fwdEmail: document.getElementById('forwarding-email').value,
-                    groupId: document.getElementById('group-id').value, groupName: document.getElementById('group-name').value,
+                    token: document.getElementById('groupme-token').value,
+                    fwdEmail: document.getElementById('forwarding-email').value,
+                    groupId: document.getElementById('group-id').value,
+                    groupName: document.getElementById('group-name').value,
+                    senderName: document.getElementById('sender-name').value || "Shalom Karr's GroupMe Bot",
                     adminEmail: document.getElementById('admin-email').value || document.getElementById('forwarding-email').value,
-                    universalCc: document.getElementById('universal-cc-email').value || "", bccEmails: document.getElementById('bcc-emails').value || ""
+                    universalCc: document.getElementById('universal-cc-email').value || "",
+                    bccEmails: document.getElementById('bcc-emails').value || ""
                 };
                 if (!formValues.token || !formValues.fwdEmail || !formValues.groupId || !formValues.groupName) {
                     const errorEl = document.getElementById('form-error-message');
@@ -376,7 +356,7 @@
 // ========================================================================
 //      GroupMe Bot: On-Demand Polling, Backup Timer, & Message Repeater
 // ========================================================================
-// Version: 12.1 (Combines dynamic triggers with a 5-minute backup timer)
+// Version: 12.2 (Features custom sender name)
 // ========================================================================
 
 // --- BEGIN CONFIGURATION ---
@@ -388,6 +368,7 @@ const CONFIG = {
   EMAIL_RECIENT_FOR_ALL_IMAGES: "${config.fwdEmail}",
   CC_EMAILS_FOR_ALL_IMAGES: "${config.universalCc}",
   BCC_EMAILS_FOR_ALL_IMAGES: "${config.bccEmails}",
+  SENDER_NAME: "${config.senderName.replace(/"/g, '\\"')}",
   SIGNATURE: " - created by Shalom Karr"
 };
 // --- END CONFIGURATION ---
@@ -494,8 +475,10 @@ function processAndSendImageEmail(messagePayload, imageUrls) {
   try {
     const imageBlobs = imageUrls.map(url => UrlFetchApp.fetch(url).getBlob());
     MailApp.sendEmail({
-      to: CONFIG.EMAIL_RECIENT_FOR_ALL_IMAGES, subject, htmlBody: body, attachments: imageBlobs, name: "GroupMe Bot",
-      cc: CONFIG.CC_EMAILS_FOR_ALL_IMAGES || undefined, bcc: CONFIG.BCC_EMAILS_FOR_ALL_IMAGES || undefined
+      to: CONFIG.EMAIL_RECIENT_FOR_ALL_IMAGES, subject, htmlBody: body, attachments: imageBlobs,
+      name: CONFIG.SENDER_NAME,
+      cc: CONFIG.CC_EMAILS_FOR_ALL_IMAGES || undefined,
+      bcc: CONFIG.BCC_EMAILS_FOR_ALL_IMAGES || undefined
     });
     Logger.log(\`      -> Email sent successfully for message ID \${id}.\`);
   } catch (e) { Logger.log(\`      -> FAILED to send email for msg \${id}: \${e.toString()}\`); }
