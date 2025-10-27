@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup: GroupMe Copilot Image Bot</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.amplitude.com/libs/analytics-browser-2.11.1-min.js.gz"></script>
+    <script src="https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.8.0-min.js.gz"></script>
+    <script>
+      window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));
+      window.amplitude.init('3df66b6aa0ae7f04c1cf1593bd081e5b', undefined, {"autocapture":{"elementInteractions":true}});
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    
+    <style>
+        :root {
+            --primary-color: #007bff; --primary-hover: #0056b3; --secondary-color: #6c757d; --secondary-hover: #5a6268;
+            --logout-button-bg: #7f8c8d; --logout-button-hover-bg: #6c757d; --text-color: #333; --heading-color: #2c3e50;
+            --link-color: #007bff; --body-bg: #ffffff; --container-bg: transparent; --section-bg: #f9f9f9; --modal-bg: #fefefe;
+            --welcome-bg: #e8f8f5; --welcome-text: #0e6252; --warning-box-bg: #fef3cd; --warning-box-border: #ffeeba;
+            --warning-box-text: #856404; --code-bg: #f0f0f0; --code-text: #c0392b; --border-color: #dee2e6;
+            --border-radius: .3rem; --box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); --box-shadow-lg: 0 1rem 3rem rgba(0,0,0,.175);
+        }
+        body { font-family: 'Roboto', sans-serif; line-height: 1.7; margin: 0; background-color: var(--body-bg); color: var(--text-color); padding-top: 80px; }
+        header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; background-color: black; color: white; text-align: center; padding: 15px 30px; box-sizing: border-box; border-bottom: 1px solid #333; }
+        header h1 { color: white; font-weight: 700; font-size: 2.2em; margin: 0; }
+        .container { max-width: 800px; margin: 30px auto; padding: 20px 30px; }
+        .intro-summary { background-color: var(--section-bg); padding: 20px 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); margin-bottom: 30px; }
+        .intro-summary p { font-size: 1.05em; line-height: 1.6; }
+        .intro-summary strong { color: var(--heading-color); }
+        h2 { color: var(--primary-color); font-weight: 500; border-bottom: 2px solid var(--primary-color); padding-bottom: 8px; margin-top: 40px; margin-bottom: 20px; font-size: 1.6em; }
+        p, li { color: #444; margin-bottom: 12px; }
+        ul, ol { padding-left: 25px; }
+        li { margin-bottom: 10px; }
+        strong { font-weight: 700; color: #333; }
+        code { background-color: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; color: var(--code-text); }
+        .warning-box { background-color: var(--warning-box-bg); border: 1px solid var(--warning-box-border); border-left: 5px solid #ffc107; padding: 15px 20px; margin: 20px 0; border-radius: 5px; }
+        .warning-box h2 { color: var(--warning-box-text); margin-top: 0; }
+        a { color: var(--link-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        #auth-prompt-section { padding: 30px 20px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--section-bg); text-align: center; max-width: 550px; margin: 40px auto; }
+        #auth-prompt-section h2 { margin-top: 0; border-bottom: none; color: var(--heading-color); }
+        .auth-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .button-primary, .button-secondary { padding: 10px 25px; font-size: 1em; font-weight: 500; border-radius: var(--border-radius); cursor: pointer; transition: all 0.2s ease; border: none; }
+        .button-primary { background-color: var(--primary-color); color: white; }
+        .button-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        .button-secondary { background-color: var(--secondary-color); color: white; }
+        .button-secondary:hover { background-color: var(--secondary-hover); }
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.65); align-items: center; justify-content: center; }
+        .modal-content { background-color: var(--modal-bg); padding: 30px 35px; border: 1px solid var(--border-color); width: 90%; max-width: 450px; border-radius: var(--border-radius); box-shadow: var(--box-shadow-lg); position: relative; }
+        .modal-content h2 { margin-top: 0; margin-bottom: 25px; text-align: center; font-size: 1.5em; border-bottom: none;}
+        .close-button { color: #aaa; position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; }
+        .form-group label .required { color: #dc3545; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--border-radius); box-sizing: border-box; font-size: 1em; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 2px rgba(0,123,255,.25); }
+        .form-group small { display: block; margin-top: 5px; font-size: 0.85em; color: #6c757d; }
+        .form-message { margin-top: 15px; padding: 8px; border-radius: 4px; font-size: 0.9em; text-align: center; }
+        .form-message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c2c7;}
+        .form-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;}
+        .modal-content .button-primary { width: 100%; padding: 10px; border: none; font-size: 1em; display: flex; align-items: center; justify-content: center; }
+        .button-spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-switch { text-align: center; margin-top: 18px; font-size: 0.9em; }
+        .welcome-message { background-color: var(--welcome-bg); color: var(--welcome-text); padding: 12px 18px; border-radius: var(--border-radius); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #bdede0; }
+        .welcome-message p { margin: 0; font-weight: 500; }
+        .button-logout { background-color: var(--logout-button-bg); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85em; font-weight: 500; cursor: pointer; transition: background-color 0.2s ease; }
+        .button-logout:hover { background-color: var(--logout-button-hover-bg); }
+        .hidden { display: none !important; }
+        .config-form-container { background-color: var(--section-bg); padding: 25px 30px; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-top: 15px; }
+        .download-button { width: 100%; max-width: 400px; margin: 20px auto 0 auto; display: block; padding: 12px 25px; font-size: 1.1em; font-weight: bold; }
+        .advanced-options { margin-top: 20px; border: 1px solid var(--border-color); border-radius: var(--border-radius); }
+        .advanced-options summary { font-weight: 500; padding: 12px 15px; cursor: pointer; background-color: #f1f1f1; border-radius: var(--border-radius); }
+        .advanced-options[open] summary { border-bottom: 1px solid var(--border-color); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .advanced-options .details-content { padding: 20px; }
+        footer { text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.9em; color: #7f8c8d; }
+        footer a { color: var(--primary-color); font-weight: 500; }
+        @media (max-width: 768px) {
+            body { padding-top: 60px; }
+            header { padding: 10px 20px; }
+            header h1 { font-size: 1.9em; }
+            .container { margin: 20px; padding: 15px 20px; }
+            h2 { font-size: 1.4em; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Setup: GroupMe Copilot Image Bot</h1>
+    </header>
+
+    <div class="container">
+        <!-- Introductory Section -->
+        <section class="intro-summary">
+            <p>Welcome! This page provides the latest version of the <strong>GroupMe Copilot Image Bot</strong>. This powerful tool uses an intelligent, on-demand polling system to instantly capture images from Copilot, even when it edits a message. It also automatically forwards every user message to Copilot.</p>
+            <p>Simply sign up or log in to generate your personalized <code>Code.gs</code> script file. The new setup is simpler and more reliable than ever.</p>
+        </section>
+
+        <!-- Auth Prompt Section -->
+        <section id="auth-prompt-section"> 
+            <h2>Unlock the Bot Generator</h2>
+            <p>Sign up or log in to access the configuration form and the rest of the setup guide.</p>
+            <div class="auth-actions">
+                <button id="showSignupModalBtn" class="button-primary">Sign Up</button>
+                <button id="showLoginModalBtn" class="button-secondary">Log In</button>
+            </div>
+        </section>
+
+        <!-- Welcome Message -->
+        <div class="welcome-message hidden" id="welcomeMessageDiv"> 
+            <p>Welcome! You can now configure and generate your bot script. <button id="logoutButton" class="button-logout">Logout</button></p>
+        </div>
+
+        <!-- Gated Content: Form and Instructions -->
+        <div id="gated-instructions-content" class="hidden">
+            <main id="setup-guide-section">
+                <!-- Step 1: Configuration Form -->
+                <article class="phase">
+                    <h2>Step 1: Configure Your Bot &amp; Generate Script</h2>
+                    <p>Fill out the form below. The generated script will handle all message forwarding and image capturing automatically. Click "Generate & Download Script" when you are done.</p>
+                    <form id="config-form" class="config-form-container">
+                        <p id="form-error-message" class="form-message error" style="display: none;"></p>
+                        <div class="form-group">
+                            <label for="groupme-token">GroupMe Access Token <span class="required">*</span></label>
+                            <input type="text" id="groupme-token" name="groupme-token" placeholder="Paste your token here" required>
+                            <small>Find this at <a href="https://dev.groupme.com/applications" target="_blank">dev.groupme.com/applications</a>.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="forwarding-email">Primary Image Forwarding Email <span class="required">*</span></label>
+                            <input type="email" id="forwarding-email" name="forwarding-email" placeholder="your-main-email@example.com" required>
+                            <small>The primary email address where all forwarded images will be sent.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="group-id">Group ID <span class="required">*</span></label>
+                            <input type="text" id="group-id" name="group-id" placeholder="e.g., 12345678" required>
+                            <small>Get the Group ID from the URL (e.g., .../web/groups/<strong>12345678</strong>).</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="group-name">Group's Friendly Name <span class="required">*</span></label>
+                            <input type="text" id="group-name" name="group-name" placeholder="e.g., My Main Chat" required>
+                            <small>A name for your group, used in email subjects for clarity.</small>
+                        </div>
+                        <details class="advanced-options">
+                            <summary>Advanced Email Settings (Optional)</summary>
+                            <div class="details-content">
+                                <div class="form-group">
+                                    <label for="sender-name">Email Sender Name</label>
+                                    <input type="text" id="sender-name" name="sender-name" placeholder="Shalom Karr's GroupMe Bot">
+                                    <small>The "From" name that will appear in your email inbox.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="universal-cc-email">Universal CC Email for All Images</label>
+                                    <input type="email" id="universal-cc-email" name="universal-cc-email" placeholder="1234567890@mypixmessages.com">
+                                    <small>This address will be CC'd on <strong>every</strong> image email. Ideal for SMS/MMS gateways.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="admin-email">Admin Email for Logs</label>
+                                    <input type="email" id="admin-email" name="admin-email" placeholder="you@example.com">
+                                    <small>Your email for receiving error logs from the script.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bcc-emails">BCC Emails</label>
+                                    <input type="text" id="bcc-emails" name="bcc-emails" placeholder="archive@example.com">
+                                    <small>Comma-separated list of emails to BCC on forwarded images.</small>
+                                </div>
+                            </div>
+                        </details>
+                        <button type="submit" class="button-primary download-button">
+                             <span class="button-text">Generate &amp; Download Script</span>
+                             <span class="button-spinner"></span>
+                        </button>
+                    </form>
+                </article>
+
+                <article class="phase">
+                    <h2>Step 2: Google Apps Script Project Setup</h2>
+                    <ol>
+                        <li>Go to <a href="https://script.google.com" target="_blank">script.google.com</a> and click "<strong>+ New project</strong>".</li>
+                        <li>Rename the project (e.g., "GroupMe Bot v12").</li>
+                        <li>Delete all the default content in the <code>Code.gs</code> file.</li>
+                        <li>Open the <code>Code.gs</code> file you just downloaded, copy its entire content, and paste it into the empty editor.</li>
+                        <li>Click the <strong>Save project</strong> icon (💾).</li>
+                        <li><strong>CRITICAL:</strong> A dialog will likely pop up asking for authorization. Click "Review permissions", select your account, click "Advanced", then "Go to [Project Name] (unsafe)", and finally "Allow". This is required for the script to manage its own triggers.</li>
+                    </ol>
+                </article>
+
+                <article class="phase">
+                    <h2>Step 3: Deploy as a Web App</h2>
+                    <ol>
+                        <li>Click the blue "<strong>Deploy</strong>" button and select "<strong>New deployment</strong>".</li>
+                        <li>Click the gear icon (⚙️) and choose "<strong>Web app</strong>".</li>
+                        <li>Fill in the details:
+                            <ul>
+                                <li><strong>Execute as:</strong> "<strong>Me (your.email@example.com)</strong>"</li>
+                                <li><strong>Who has access:</strong> "<strong>Anyone</strong>"</li>
+                            </ul>
+                        </li>
+                        <li>Click "<strong>Deploy</strong>". Copy the Web app URL.</li>
+                    </ol>
+                </article>
+
+                <article class="phase">
+                    <h2>Step 4: Create the GroupMe Bot</h2>
+                    <ol>
+                        <li>Go to <a href="https://dev.groupme.com/bots" target="_blank">https://dev.groupme.com/bots</a> and click "<strong>Create Bot</strong>".</li>
+                        <li>Select the group, give your bot a name (e.g., "Copilot Bridge").</li>
+                        <li>In the "<strong>Callback URL</strong>" field, paste the Web app URL from the previous step.</li>
+                        <li>Click "<strong>Submit</strong>". Your bot is now in your group.</li>
+                    </ol>
+                </article>
+
+                <article class="phase warning-box">
+                    <h2>Step 5: Set Up the Failsafe Backup Trigger (One Time Only)</h2>
+                    <p>The new script creates high-speed triggers automatically. You only need to create **ONE** permanent backup trigger to catch anything that might be missed.</p>
+                    <ol>
+                        <li>In your Apps Script project, click the "<strong>Triggers</strong>" icon (⏰ clock) on the left sidebar.</li>
+                        <li>If you have any old triggers from previous versions, **DELETE ALL of them**. The page should be empty.</li>
+                        <li>Click "<strong>+ Add Trigger</strong>" in the bottom right.</li>
+                        <li>Configure the new trigger with these exact settings:
+                            <ul>
+                                <li>Choose which function to run: <strong><code>backupImageChecker</code></strong></li>
+                                <li>Choose which deployment should run: <code>Head</code></li>
+                                <li>Select event source: <code>Time-driven</code></li>
+                                <li>Select type of time-based trigger: <code>Minutes timer</code></li>
+                                <li>Select minute interval: <strong><code>Every 5 minutes</code></strong></li>
+                                <li>Failure notification settings: <code>Notify me immediately</code></li>
+                            </ul>
+                        </li>
+                        <li>Click <strong>Save</strong>. You are done! You should only have this one trigger listed.</li>
+                    </ol>
+                </article>
+
+                <article class="phase">
+                    <h2>Step 6: Testing</h2>
+                    <p>Your bot is now fully operational. Here's how to test it:</p>
+                    <ol>
+                        <li><strong>Message Forwarding:</strong> Type a regular message like <code>what is the weather?</code>. The bot should immediately post <code>@Copilot what is the weather?</code>.</li>
+                        <li><strong>Loop Prevention:</strong> Type a message starting with an at-symbol, like <code>@Copilot thanks!</code>. The bot should **ignore** this to prevent loops.</li>
+                        <li><strong>Image Capturing:</strong> Ask Copilot for an image. You should receive an email within 15-30 seconds.</li>
+                        <li><strong>Troubleshooting:</strong> If something doesn't work, check the "<strong>Executions</strong>" page (📊 icon) in your Apps Script project to view logs.</li>
+                    </ol>
+                </article>
+            </main>
+        </div>
+
+        <footer>
+            <p>Good luck with your setup! If you found this useful, consider sending me an <a href="mailto:copilotimagesfromgroupme@gmail.com"> Email to copilotimagesfromgroupme@gmail.com </a>thanking me! - Shalom Karr</p>
+        </footer>
+    </div> 
+
+    <!-- Modals -->
+    <div id="signupModal" class="modal"><div class="modal-content"><span class="close-button">×</span><h2>Create Account to Use Generator</h2><form id="signupForm"><div class="form-group"><label for="signupEmail">Email</label><input type="email" id="signupEmail" name="signupEmail" placeholder="you@example.com" required autocomplete="email"></div><div class="form-group"><label for="signupName">Full Name</label><input type="text" id="signupName" name="signupName" placeholder="Your Full Name" required autocomplete="name"></div><div class="form-group"><label for="signupPassword">Password</label><input type="password" id="signupPassword" name="signupPassword" placeholder="Choose a password (min. 6 characters)" required autocomplete="new-password"></div><div class="form-group"><label for="signupPhone">Phone Number</label><input type="tel" id="signupPhone" name="signupPhone" placeholder="e.g., 123-456-7890" required autocomplete="tel"></div><div class="cf-turnstile" id="signup-turnstile-widget"></div><p id="signupMessage" class="form-message"></p><button type="submit" class="button-primary"><span class="button-text">Sign Up</span><span class="button-spinner"></span></button></form><p class="modal-switch">Already have an account? <a href="#" id="switchToLoginLinkFromSignup">Log In</a></p></div></div>
+    <div id="loginModal" class="modal"><div class="modal-content"><span class="close-button">×</span><h2>Log In to Use Generator</h2><form id="loginForm"><div class="form-group"><label for="loginEmail">Email</label><input type="email" id="loginEmail" name="loginEmail" placeholder="you@example.com" required></div><div class="form-group"><label for="loginPassword">Password</label><input type="password" id="loginPassword" name="loginPassword" placeholder="Your password" required></div><div class="cf-turnstile" id="login-turnstile-widget"></div><p id="loginMessage" class="form-message"></p><button type="submit" class="button-primary"><span class="button-text">Log In</span><span class="button-spinner"></span></button></form><p class="modal-switch"><a href="#" id="forgotPasswordLink">Forgot Password?</a></p><p class="modal-switch">Don't have an account? <a href="#" id="switchToSignupLinkFromLogin">Sign Up</a></p></div></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const SUPABASE_URL = 'https://zazjozinljwdgbyppffy.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphempvemlubGp3ZGdieXBwZmZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY1Nzg5MTQsImV4cCI6MjA2MjE1NDkxNH0.PNGhZLxt6D8Lk76CUU0Bviul-T3nV0xHvQaJobX8f-k';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            const authPromptSection = document.getElementById('auth-prompt-section');
+            const gatedContent = document.getElementById('gated-instructions-content');
+            const welcomeDiv = document.getElementById('welcomeMessageDiv');
+            const configForm = document.getElementById('config-form');
+            const signupModal = document.getElementById('signupModal');
+            const loginModal = document.getElementById('loginModal');
+
+            function showLoggedInUI(user) {
+                authPromptSection.classList.add('hidden');
+                welcomeDiv.classList.remove('hidden');
+                welcomeDiv.querySelector('p').innerHTML = `Welcome, ${user.email}! You can now generate your script. <button id="logoutButton" class="button-logout">Logout</button>`;
+                document.getElementById('logoutButton').addEventListener('click', () => supabase.auth.signOut());
+                gatedContent.classList.remove('hidden');
+            }
+
+            function showLoggedOutUI() {
+                authPromptSection.classList.remove('hidden');
+                welcomeDiv.classList.add('hidden');
+                gatedContent.classList.add('hidden');
+            }
+
+            supabase.auth.onAuthStateChange((_, session) => session ? showLoggedInUI(session.user) : showLoggedOutUI());
+            supabase.auth.getSession().then(({ data }) => data.session ? showLoggedInUI(data.session.user) : showLoggedOutUI());
+
+            function openModal(modal) {
+                modal.style.display = 'flex';
+                const widget = modal.querySelector('.cf-turnstile');
+                if (widget && widget.innerHTML === '') {
+                    turnstile.render(widget, { sitekey: '0x4AAAAAABeUvDgLI36t5lu-' });
+                }
+            }
+            function closeModal(modal) { modal.style.display = 'none'; }
+
+            document.getElementById('showSignupModalBtn').addEventListener('click', () => openModal(signupModal));
+            document.getElementById('showLoginModalBtn').addEventListener('click', () => openModal(loginModal));
+            document.getElementById('switchToLoginLinkFromSignup').addEventListener('click', (e) => { e.preventDefault(); closeModal(signupModal); openModal(loginModal); });
+            document.getElementById('switchToSignupLinkFromLogin').addEventListener('click', (e) => { e.preventDefault(); closeModal(loginModal); openModal(signupModal); });
+            document.querySelectorAll('.modal .close-button').forEach(b => b.addEventListener('click', () => closeModal(b.closest('.modal'))));
+            window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) closeModal(e.target); });
+
+            document.getElementById('loginForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const { error } = await supabase.auth.signInWithPassword({ email: e.target.loginEmail.value, password: e.target.loginPassword.value });
+                if (error) document.getElementById('loginMessage').textContent = error.message;
+                else closeModal(loginModal);
+            });
+
+            document.getElementById('signupForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const { error } = await supabase.auth.signUp({ email: e.target.signupEmail.value, password: e.target.signupPassword.value, options: { data: { full_name: e.target.signupName.value, phone: e.target.signupPhone.value } } });
+                const msgEl = document.getElementById('signupMessage');
+                if (error) { msgEl.textContent = error.message; }
+                else { msgEl.textContent = 'Success! Check your email to verify your account.'; setTimeout(() => closeModal(signupModal), 3000); }
+            });
+
+            configForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const formValues = {
+                    token: document.getElementById('groupme-token').value,
+                    fwdEmail: document.getElementById('forwarding-email').value,
+                    groupId: document.getElementById('group-id').value,
+                    groupName: document.getElementById('group-name').value,
+                    senderName: document.getElementById('sender-name').value || "Shalom Karr's GroupMe Bot",
+                    adminEmail: document.getElementById('admin-email').value || document.getElementById('forwarding-email').value,
+                    universalCc: document.getElementById('universal-cc-email').value || "",
+                    bccEmails: document.getElementById('bcc-emails').value || ""
+                };
+                if (!formValues.token || !formValues.fwdEmail || !formValues.groupId || !formValues.groupName) {
+                    const errorEl = document.getElementById('form-error-message');
+                    errorEl.textContent = 'Please fill out all required fields.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                document.getElementById('form-error-message').style.display = 'none';
+                const scriptContent = generateScriptContent(formValues);
+                const blob = new Blob([scriptContent], { type: 'text/plain;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'Code.gs';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            });
+        });
+
+        function generateScriptContent(config) {
+            const groupMap = `{ "${config.groupId}": "${config.groupName.replace(/"/g, '\\"')}" }`;
+            return `// @ts-nocheck
+// ========================================================================
+//      GroupMe Bot: On-Demand Polling, Backup Timer, & Message Repeater
+// ========================================================================
+// Version: 12.2 (Features custom sender name)
+// ========================================================================
+
+// --- BEGIN CONFIGURATION ---
+const CONFIG = {
+  ADMIN_EMAIL: "${config.adminEmail}",
+  GROUPME_USER_TOKEN: "${config.token}",
+  GROUPME_ACCESS_TOKEN: "${config.token}",
+  GROUP_ID_FRIENDLY_NAME_MAP: ${groupMap},
+  EMAIL_RECIENT_FOR_ALL_IMAGES: "${config.fwdEmail}",
+  CC_EMAILS_FOR_ALL_IMAGES: "${config.universalCc}",
+  BCC_EMAILS_FOR_ALL_IMAGES: "${config.bccEmails}",
+  SENDER_NAME: "${config.senderName.replace(/"/g, '\\"')}",
+  SIGNATURE: " - created by Shalom Karr"
+};
+// --- END CONFIGURATION ---
+
+const ACTUAL_COPILOT_USER_ID = "128934125";
+const COPILOT_NICKNAME_FOR_MENTION = "@Copilot";
+const PROCESSED_IMAGE_MESSAGE_IDS_KEY = 'gmeUniversalProcessedImageIds';
+const MAX_PROCESSED_IDS_TO_STORE = 200;
+const POLLING_INITIAL_DELAY_MS = 15 * 1000;
+const POLLING_INTERVAL_MS = 10 * 1000;
+const POLLING_MAX_CHECKS = 10;
+
+function doPost(e) {
+  try {
+    const postData = JSON.parse(e.postData.contents);
+    const { group_id, user_id, text, sender_type, id } = postData;
+    if (!group_id || !user_id) return ContentService.createTextOutput("");
+    const messageText = (text || "").trim();
+    if (sender_type === 'user' && user_id !== ACTUAL_COPILOT_USER_ID && messageText && !messageText.startsWith('@')) {
+      sendNewMessageAsUser(\`\${COPILOT_NICKNAME_FOR_MENTION} \${messageText}\`, group_id);
+      createPollingSequence(group_id, id);
+    }
+  } catch (error) { Logger.log(\`FATAL Error in doPost: \${error.message}\`); }
+  return ContentService.createTextOutput("");
+}
+
+function imageChecker(e) {
+  const currentTriggerId = e.triggerUid;
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const sessionDataJson = scriptProperties.getProperty(currentTriggerId);
+  deleteTriggerById(currentTriggerId);
+  if (!sessionDataJson) return;
+  scriptProperties.deleteProperty(currentTriggerId);
+  const sessionData = JSON.parse(sessionDataJson);
+  const { groupId, afterMessageId, checkCount } = sessionData;
+  Logger.log(\`POLL CHECK #\${checkCount}: Checking group \${groupId} for images after message \${afterMessageId}.\`);
+  try {
+    const messagesUrl = \`https://api.groupme.com/v3/groups/\${groupId}/messages?token=\${CONFIG.GROUPME_ACCESS_TOKEN}&after_id=\${afterMessageId}\`;
+    const response = UrlFetchApp.fetch(messagesUrl, { muteHttpExceptions: true });
+    if (response.getResponseCode() === 200) {
+      const data = JSON.parse(response.getContentText());
+      if (data.response && data.response.messages) {
+        for (const message of data.response.messages) {
+          if (message.sender_id === ACTUAL_COPILOT_USER_ID) {
+            const imageUrls = (message.attachments || []).filter(att => att.type === 'image' && att.url).map(att => att.url);
+            if (imageUrls.length > 0 && !isMessageProcessed(message.id)) {
+              Logger.log(\`POLL SUCCESS: Found new Copilot image message \${message.id} on check #\${checkCount}.\`);
+              processAndSendImageEmail(message, imageUrls);
+              markMessageAsProcessed(message.id);
+              return;
+            }
+          }
+        }
+      }
+    }
+    if (checkCount < POLLING_MAX_CHECKS) {
+      const nextTrigger = ScriptApp.newTrigger('imageChecker').timeBased().after(POLLING_INTERVAL_MS).create();
+      scriptProperties.setProperty(nextTrigger.getUniqueId(), JSON.stringify({ ...sessionData, checkCount: checkCount + 1 }));
+      Logger.log(\`POLL RESCHEDULE: No image found. Next check (#\${checkCount + 1}) in 10 seconds.\`);
+    } else {
+      Logger.log(\`POLL TIMEOUT: Reached \${POLLING_MAX_CHECKS} checks for prompt after \${afterMessageId}. Ending sequence.\`);
+    }
+  } catch (err) { Logger.log(\`POLL ERROR on check #\${checkCount}: \${err.message}\`); }
+}
+
+function backupImageChecker() {
+  Logger.log("--- BACKUP TIMER (5 min): Starting scan for any missed images. ---");
+  const groupIds = Object.keys(CONFIG.GROUP_ID_FRIENDLY_NAME_MAP);
+  if (groupIds.length === 0) return;
+  for (const groupId of groupIds) {
+    const groupName = CONFIG.GROUP_ID_FRIENDLY_NAME_MAP[groupId];
+    Logger.log(\`\\n[Backup Scan: "\${groupName}" (\${groupId})]\`);
+    try {
+      const messagesUrl = \`https://api.groupme.com/v3/groups/\${groupId}/messages?token=\${CONFIG.GROUPME_ACCESS_TOKEN}&limit=100\`;
+      const response = UrlFetchApp.fetch(messagesUrl, { muteHttpExceptions: true });
+      if (response.getResponseCode() !== 200) { continue; }
+      const data = JSON.parse(response.getContentText());
+      if (!data.response || !data.response.messages) continue;
+      for (const message of data.response.messages) {
+        const imageUrls = (message.attachments || []).filter(att => att.type === 'image' && att.url).map(att => att.url);
+        if (imageUrls.length > 0 && !isMessageProcessed(message.id)) {
+          Logger.log(\`   -> BACKUP FOUND: Missed image message \${message.id} from "\${message.name}". Processing now.\`);
+          processAndSendImageEmail(message, imageUrls);
+          markMessageAsProcessed(message.id);
+        }
+      }
+    } catch (err) { Logger.log(\`   -> BACKUP FATAL EXCEPTION for group "\${groupName}": \${err.message}\`); }
+    Utilities.sleep(500);
+  }
+  Logger.log("--- BACKUP TIMER finished. ---");
+}
+
+function processAndSendImageEmail(messagePayload, imageUrls) {
+  const { id, group_id, name, text, sender_id } = messagePayload;
+  const isCopilotMsg = sender_id === ACTUAL_COPILOT_USER_ID;
+  const senderName = name || (isCopilotMsg ? "Copilot" : "System/Other");
+  const friendlyGroupName = CONFIG.GROUP_ID_FRIENDLY_NAME_MAP[group_id] || group_id;
+  const messageText = text || "";
+  let subject = isCopilotMsg ? \`Image from Copilot (Msg ID: \${id.slice(-6)})\` : \`Image from \${senderName} in \${friendlyGroupName}\`;
+  if (CONFIG.SIGNATURE) subject += CONFIG.SIGNATURE;
+  let body = isCopilotMsg ? \`Image received from Copilot.<br>Accompanying text: "<i>\${escapeHtml(messageText)}</i>"<br>--- Image(s) Attached ---<br>\` : \`Image(s) received from <b>\${escapeHtml(senderName)}</b> in group <b>\${friendlyGroupName}</b>.<br>Accompanying text: "<i>\${escapeHtml(messageText)}</i>"<br><br>\`;
+  imageUrls.forEach(url => { body += \`<a href="\${url}">\${url}</a><br><img src="\${url}" alt="Image from GroupMe" style="max-width: 500px; height: auto; margin: 5px 0 15px 0;"><br>\`; });
+  if (CONFIG.SIGNATURE) body += \`<br>\${CONFIG.SIGNATURE}\`;
+  try {
+    const imageBlobs = imageUrls.map(url => UrlFetchApp.fetch(url).getBlob());
+    MailApp.sendEmail({
+      to: CONFIG.EMAIL_RECIENT_FOR_ALL_IMAGES, subject, htmlBody: body, attachments: imageBlobs,
+      name: CONFIG.SENDER_NAME,
+      cc: CONFIG.CC_EMAILS_FOR_ALL_IMAGES || undefined,
+      bcc: CONFIG.BCC_EMAILS_FOR_ALL_IMAGES || undefined
+    });
+    Logger.log(\`      -> Email sent successfully for message ID \${id}.\`);
+  } catch (e) { Logger.log(\`      -> FAILED to send email for msg \${id}: \${e.toString()}\`); }
+}
+
+function createPollingSequence(groupId, afterMessageId) {
+  try {
+    const trigger = ScriptApp.newTrigger('imageChecker').timeBased().after(POLLING_INITIAL_DELAY_MS).create();
+    const sessionData = { groupId, afterMessageId, checkCount: 1 };
+    PropertiesService.getScriptProperties().setProperty(trigger.getUniqueId(), JSON.stringify(sessionData));
+    Logger.log(\`POLL START: Created initial trigger \${trigger.getUniqueId()} for group \${groupId}. First check in 15 seconds.\`);
+  } catch (err) { Logger.log(\`ERROR creating trigger: \${err.message}\`); }
+}
+
+function sendNewMessageAsUser(textToSend, groupId) {
+  const attachments = [{ type: "mentions", user_ids: [ACTUAL_COPILOT_USER_ID], loci: [[0, COPILOT_NICKNAME_FOR_MENTION.length]] }];
+  const payload = { message: { source_guid: Utilities.getUuid(), text: textToSend, attachments } };
+  const url = \`https://api.groupme.com/v3/groups/\${groupId}/messages?token=\${CONFIG.GROUPME_USER_TOKEN}\`;
+  UrlFetchApp.fetch(url, { method: "post", contentType: "application/json", payload: JSON.stringify(payload), muteHttpExceptions: true });
+}
+
+function isMessageProcessed(messageId) {
+  const key = PROCESSED_IMAGE_MESSAGE_IDS_KEY;
+  const processedIdsJson = PropertiesService.getScriptProperties().getProperty(key);
+  return processedIdsJson ? JSON.parse(processedIdsJson).includes(String(messageId)) : false;
+}
+
+function markMessageAsProcessed(messageId) {
+  const key = PROCESSED_IMAGE_MESSAGE_IDS_KEY;
+  const scriptProperties = PropertiesService.getScriptProperties();
+  let processedIds = JSON.parse(scriptProperties.getProperty(key) || '[]');
+  const stringMessageId = String(messageId);
+  if (!processedIds.includes(stringMessageId)) {
+    processedIds.push(stringMessageId);
+    while (processedIds.length > MAX_PROCESSED_IDS_TO_STORE) { processedIds.shift(); }
+    scriptProperties.setProperty(key, JSON.stringify(processedIds));
+  }
+}
+
+function deleteTriggerById(triggerId) {
+  const allTriggers = ScriptApp.getProjectTriggers();
+  for (const trigger of allTriggers) {
+    if (trigger.getUniqueId() === triggerId) { ScriptApp.deleteTrigger(trigger); break; }
+  }
+}
+
+function escapeHtml(text) {
+  if (text == null) return "";
+  return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+`;
+        }
+    </script>
+</body>
+</html>
